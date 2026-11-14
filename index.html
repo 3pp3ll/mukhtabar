@@ -95,6 +95,12 @@ body.resizing{cursor:col-resize;user-select:none}
 .welcome{max-width:640px;margin:6vh auto;text-align:center}
 .welcome h2{font-size:24px;margin:0 0 6px}
 .welcome p{color:var(--muted);margin:0 0 18px}
+.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;text-align:start;margin-top:22px}
+.guide div{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 10px;font-size:13px}
+.guide b.ic{min-width:26px;height:26px;border-radius:7px;background:var(--panel-2);border:1px solid var(--line);display:grid;place-items:center;font-size:14px;flex:none}
+.guide span{color:var(--muted);line-height:1.5}.guide span strong{color:var(--ink);font-weight:600}
+.welcome .gh{margin:26px 0 0;font-size:14px;font-weight:700}
+#helpDlg{width:min(760px,calc(100vw - 24px))}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .chip{border:1px solid var(--line);background:var(--panel);padding:8px 12px;border-radius:999px;font-size:13px;color:var(--ink);text-align:start}
 .chip:hover{border-color:var(--accent)}
@@ -238,6 +244,9 @@ body:not(.owner) [data-owner]{display:none!important}
 .stars{display:flex;gap:2px}
 .stars button{border:none;background:none;font-size:30px;color:var(--line);padding:0 2px;line-height:1}
 .stars button.on{color:#e0a800}
+.resume{display:flex;align-items:center;gap:10px;max-width:960px;margin:0 auto 8px;padding:8px 12px;border:1px solid var(--note-line);background:var(--note);border-radius:12px;font-size:13.5px}
+.resume span{flex:1}
+.think{font-size:12.5px;color:var(--muted);margin-inline-start:6px}
 @media (max-width:860px){
   .labgrid{grid-template-columns:1fr;grid-template-rows:auto 1fr}
   .lablist{border-inline-end:none;border-bottom:1px solid var(--line);max-height:170px}
@@ -279,7 +288,8 @@ body:not(.owner) [data-owner]{display:none!important}
       <button class="btn danger" id="stopBtn" hidden>■ <span class="t">إيقاف</span></button>
       <button class="btn" id="tableBtn" data-owner title="الطاولة والأعضاء (للمالك فقط)">👥 <span class="t">الطاولة</span></button>
       <button class="btn" id="labBtn" title="تقييم الجلسات">⭐ <span class="t">التقييم</span></button>
-      <button class="btn" id="exportBtn" title="تصدير المحضر">⤓ <span class="t">تصدير</span></button>
+      <button class="btn" id="exportBtn" title="تصدير المحضر كنص للقراءة (.md) — لا يُستورد">⤓ <span class="t">المحضر</span></button>
+      <button class="btn" id="helpBtn" title="دليل الأيقونات">؟</button>
       <button class="btn" id="newBtn" title="مشروع جديد">＋ <span class="t">مشروع جديد</span></button>
       <button class="btn" id="settingsBtn">⚙ <span class="t">الإعدادات</span></button>
       <button class="btn" id="acctBtn" title="حسابي"><span class="aav" id="acctAv">؟</span><span class="t" id="acctName"></span></button>
@@ -300,6 +310,7 @@ body:not(.owner) [data-owner]{display:none!important}
           <span class="sp"></span>
           <span class="small">نوع المخرج:</span><select id="outSel" title="نوع المخرج"><option value="auto">تلقائي</option><option value="web">صفحة إلكترونية</option><option value="app">تطبيق ويب</option><option value="flutter">تطبيق Flutter</option><option value="text">نصوص وتحليل</option></select>
         </div>
+        <div class="resume" id="resumeBar" hidden><span>⏸ انقطعت الجلسة قبل اكتمال الخلاصة. النقاش محفوظ، ويمكن كتابة الخلاصة الآن بدون إعادته. وإذا أردت تعديلاً (مثل الألوان)، اكتبه في الخانة ثم اضغط الزر.</span><button class="btn sm primary" id="resumeBtn" type="button">↻ أكمل إلى الخلاصة</button></div>
         <div class="pending" id="pending"></div>
         <div class="cbox">
           <button class="btn attach" id="attachBtn" type="button" title="إرفاق ملفات: صور، فيديو، PDF، Excel، ملفات برمجية">＋</button>
@@ -414,6 +425,10 @@ body:not(.owner) [data-owner]{display:none!important}
     <p class="small">الحسابات حالياً محفوظة على هذا الجهاز فقط، وستنتقل إلى خادم المنصة عند الإطلاق.</p>
   </div>
 </div>
+<dialog id="helpDlg">
+  <div class="dhead"><h3>دليل الأيقونات</h3><button class="btn sm" data-close>✕</button></div>
+  <div class="dbody" id="helpBody"></div>
+</dialog>
 <dialog id="acctDlg">
   <div class="dhead"><h3>حسابي</h3><button class="btn sm" data-close>✕</button></div>
   <div class="dbody" id="acctBody"></div>
@@ -621,7 +636,7 @@ function renderEntry(e){
   const avTxt=e.type==='user'?'أ':(e.type==='final'?'★':(mem&&mem.icon)||initial(dispName(e)));
   d.innerHTML=`<div class="av" style="background:${esc(color)}">${esc(avTxt)}</div>
   <div class="bubble"><div class="meta"><span class="nm">${esc(dispName(e))}</span>${e.model&&isOwner()?`<span class="mdl">${esc(e.model)}</span>`:''}${e.round?`<span class="rd">${typeof e.round==='number'?'الجولة '+e.round:esc(e.round)}</span>`:''}${e.interject?'<span class="rd">مداخلة</span>':''}</div>
-  <div class="body md">${e.content?md(e.content):'<span class="typing"><i></i><i></i><i></i></span>'}</div>${e.attachments&&e.attachments.length?'<div class="achips">'+e.attachments.map(a=>chipHTML(a,false)).join('')+'</div>':''}</div>`;
+  <div class="body md">${bodyHTML(e)}</div>${e.attachments&&e.attachments.length?'<div class="achips">'+e.attachments.map(a=>chipHTML(a,false)).join('')+'</div>':''}</div>`;
   d.querySelectorAll('.achip.img').forEach(c=>c.onclick=()=>viewImage(c.dataset.id));
   if(e.type==='final'&&e.content&&e.done)addFinalActions(d,e);
   return d;
@@ -632,7 +647,18 @@ function addEntry(e){
   const el=renderEntry(e);$('#feed').appendChild(el);elMap.set(e,el);
   scrollDown();saveSession();return el;
 }
-function refresh(e){const el=elMap.get(e);if(!el)return;const b=el.querySelector('.body');if(b)b.innerHTML=e.content?md(e.content):'<span class="typing"><i></i><i></i><i></i></span>';}
+const thinkMap=new WeakMap();
+function bodyHTML(e){
+  if(e.content)return md(e.content)+(e.type==='final'&&!e.done&&!e.failed&&!running?'<p><em>⏸ انقطعت كتابة الخلاصة هنا. استخدم زر «أكمل إلى الخلاصة» بالأسفل.</em></p>':'');
+  if(e.type==='final'&&!e.done&&!running)return '<em>⏸ انقطعت كتابة الخلاصة قبل أن تبدأ. استخدم زر «أكمل إلى الخلاصة» بالأسفل.</em>';
+  const n=thinkMap.get(e);
+  return '<span class="typing"><i></i><i></i><i></i></span>'+(n?'<span class="think">🧠 يفكّر الآن… ('+n.toLocaleString('en')+' حرفاً من التفكير)</span>':'');
+}
+function refresh(e){const el=elMap.get(e);if(!el)return;const b=el.querySelector('.body');if(b)b.innerHTML=bodyHTML(e);}
+function thinkInto(e){
+  let pend=false;
+  return n=>{thinkMap.set(e,n);if(pend||e.content)return;pend=true;requestAnimationFrame(()=>{pend=false;refresh(e);});};
+}
 function streamInto(e){
   let pending=false;
   return full=>{e.content=full;if(pending)return;pending=true;
@@ -672,11 +698,13 @@ function welcome(){
     'ضعوا خطة إطلاق لتطبيق توصيل محلي في الرياض خلال 90 يوماً',
     'قارنوا بين بناء نظام CRM داخلي أو شراء نظام جاهز لشركة من 50 موظفاً، واتفقوا على توصية'];
   ex.forEach(t=>{const b=document.createElement('button');b.className='chip';b.textContent=t;b.onclick=()=>{$('#input').value=t;$('#input').focus();autoGrow();};w.querySelector('.chips').appendChild(b);});
+  w.insertAdjacentHTML('beforeend','<div class="gh">دليل الأيقونات</div>'+guideHTML());
   return w;
 }
 
 /* ---------- OpenRouter ---------- */
-async function callModel({model,messages,maxTokens,effort,onDelta,signal,noTrack}){
+async function callModel({model,messages,maxTokens,effort,onDelta,onReason,signal,noTrack}){
+  let rlen=0;
   const body={model,messages,max_tokens:maxTokens,temperature:cfg.temperature,stream:true};
   if(effort&&effort!=='off')body.reasoning={effort};
   body.usage={include:true};
@@ -693,7 +721,9 @@ async function callModel({model,messages,maxTokens,effort,onDelta,signal,noTrack
       let j;try{j=JSON.parse(d)}catch(e){continue}
       if(j.error)throw new Error(j.error.message||'خطأ من المزوّد');
       if(j.usage)usage=j.usage;
-      const c=j.choices&&j.choices[0]&&j.choices[0].delta&&j.choices[0].delta.content;
+      const dl=j.choices&&j.choices[0]&&j.choices[0].delta;
+      if(dl&&typeof dl.reasoning==='string'&&dl.reasoning){rlen+=dl.reasoning.length;onReason&&onReason(rlen);}
+      const c=dl&&dl.content;
       if(c){full+=c;onDelta&&onDelta(full);}
     }
   }
@@ -748,7 +778,7 @@ async function speak(m,r,snap,focus,sig,fix){
     :transcriptText()+`\n\n---\nالآن دورك يا «${aliasOf(m)}» في الجولة ${r}.`+(focus?`\nطلب رئيس الجلسة التركيز على: ${focus}`:'')+
      '\nرُد على زملائك بألقابهم: ما الذي توافق عليه، وما الذي تعترض عليه ولماذا، وما الإضافة التي تقرّبنا من إجابة واحدة مشتركة.';
   try{
-    const out=await ask({model:m.model,system:memberSystem(m),user,maxTokens:cfg.maxTokens,effort:cfg.effort,onDelta:streamInto(e),signal:sig});
+    const out=await ask({model:m.model,system:memberSystem(m),user,maxTokens:cfg.maxTokens,effort:cfg.effort,onDelta:streamInto(e),onReason:thinkInto(e),signal:sig});
     if(!out.trim()){e.content='_(لم يُرجع النموذج نصاً — جرّب رفع حد الرموز أو خفض مستوى التفكير من الإعدادات)_';e.failed=true;}
   }catch(err){
     if(err.name==='AbortError'){if(!e.content){e.content='_(أُوقف)_';e.failed=true;}refresh(e);throw err;}
@@ -790,14 +820,9 @@ async function auditCheck(sig){
   }catch(err){if(err.name==='AbortError')throw err;addEntry({type:'error',content:'تعذّر تدقيق الإجماع: '+err.message});return null;}
   finally{setSpeaking('__mod',false);}
 }
-async function finalize(sig){
-  addEntry({type:'round',content:'الخلاصة'});
-  setSpeaking('__mod',true);
-  const e={type:'final',name:cfg.moderator.name,model:cfg.moderator.model,color:cfg.moderator.color,content:''};
-  const el=addEntry(e);
-  try{
-    await ask({model:cfg.moderator.model,signal:sig,maxTokens:(cur.outType==='flutter'?Math.max(cfg.finalMaxTokens,32000):cfg.finalMaxTokens),effort:cfg.finalEffort,onDelta:streamInto(e),system:modSystem(),
-      user:transcriptText()+`\n\n---\nاكتب الآن الإجابة النهائية الموحّدة باسم الطاولة كلها، مبنية على أفضل ما اتفق عليه الأعضاء، بهذا الهيكل:
+const finalMax=()=>cur.outType==='flutter'?Math.max(cfg.finalMaxTokens,32000):cfg.finalMaxTokens;
+function finalPrompt(){
+  return `اكتب الآن الإجابة النهائية الموحّدة باسم الطاولة كلها، مبنية على أفضل ما اتفق عليه الأعضاء، بهذا الهيكل:
 ## الخلاصة
 (فقرة قصيرة)
 ## الحل المتفق عليه
@@ -807,12 +832,63 @@ async function finalize(sig){
 ## الخطوات التالية
 
 مهم: ${outRule()}
-إذا رفض رئيس الجلسة إجماعاً سابقاً وأدار جولة تصحيح، فابنِ الخلاصة على الطريقة المصحّحة ولا تعُد إلى الحل المرفوض، واذكر في "نقاط الخلاف المتبقية" أي خطأ لم يُحسم.`});
+إذا رفض رئيس الجلسة إجماعاً سابقاً وأدار جولة تصحيح، فابنِ الخلاصة على الطريقة المصحّحة ولا تعُد إلى الحل المرفوض، واذكر في "نقاط الخلاف المتبقية" أي خطأ لم يُحسم.
+التزم بأي طلب أو تعديل كتبه صاحب الطاولة في آخر مداخلاته، فهو مقدَّم على ما اتفق عليه الأعضاء.`;
+}
+async function finalize(sig){
+  addEntry({type:'round',content:'الخلاصة'});
+  setSpeaking('__mod',true);
+  const e={type:'final',name:cfg.moderator.name,model:cfg.moderator.model,color:cfg.moderator.color,content:''};
+  const el=addEntry(e);
+  try{
+    await ask({model:cfg.moderator.model,signal:sig,maxTokens:finalMax(),effort:cfg.finalEffort,onDelta:streamInto(e),onReason:thinkInto(e),system:modSystem(),
+      user:transcriptText()+'\n\n---\n'+finalPrompt()});
     e.done=true;
   }catch(err){
-    if(err.name==='AbortError'){e.done=true;refresh(e);throw err;}
+    if(err.name==='AbortError'){refresh(e);throw err;}
     e.content=(e.content?e.content+'\n\n':'')+'⚠️ تعذّرت كتابة الخلاصة: '+err.message;e.failed=true;
-  }finally{refresh(e);if(e.content)addFinalActions(el,e);setSpeaking('__mod',false);saveSession();}
+  }finally{refresh(e);if(e.content&&(e.done||e.failed))addFinalActions(el,e);setSpeaking('__mod',false);saveSession();}
+}
+function needsResume(){
+  if(running||!entries.length)return false;
+  let lu=-1;entries.forEach((e,i)=>{if(e.type==='user')lu=i;});
+  if(lu<0)return false;
+  return !entries.slice(lu).some(e=>e.type==='final'&&e.done&&!e.failed);
+}
+async function resumeFinal(){
+  if(running)return;
+  if(!cfg.apiKey){openSettings();toast('أضف مفتاح OpenRouter أولاً');return;}
+  const note=$('#input').value.trim();
+  if(pending.length){toast('المرفقات تُرسل مع زر إرسال، وليس مع إكمال الخلاصة');return;}
+  if(note){
+    for(let i=entries.length-1;i>=0;i--){const x=entries[i];if(x.type==='user')break;if(x.type==='final'){entries.splice(i,1);const d=entries[i-1];if(d&&d.type==='round'&&d.content==='الخلاصة')entries.splice(i-1,1);break;}}
+    while(entries.length&&entries[entries.length-1].type==='error')entries.pop();
+    $('#input').value='';autoGrow();
+    entries.push({type:'user',name:'أنت',content:note,interject:true});saveSession();renderAll();
+  }
+  running=true;setUI();abortCtl=new AbortController();const sig=abortCtl.signal;const t0=Date.now();
+  try{
+    let fe=null;
+    for(let i=entries.length-1;i>=0;i--){const x=entries[i];if(x.type==='user')break;if(x.type==='final'){fe=x;break;}}
+    const partial=fe&&!fe.failed&&fe.content&&fe.content.trim().length>300?fe.content:'';
+    if(partial){
+      fe.failed=true;const tx=transcriptText();fe.failed=false;
+      refresh(fe);setSpeaking('__mod',true);
+      const onD=streamInto(fe);
+      try{
+        await ask({model:cfg.moderator.model,signal:sig,maxTokens:finalMax(),effort:cfg.finalEffort,onDelta:t=>onD(partial+t),onReason:thinkInto(fe),system:modSystem(),
+          user:tx+'\n\n---\n'+finalPrompt()+'\n\n---\nملاحظة مهمة: كنت تكتب هذه الخلاصة وانقطعت الكتابة. هذه نهاية ما كتبته حتى الآن:\n<<<\n'+partial.slice(-8000)+'\n>>>\nأكمل الكتابة من النقطة التي توقفت عندها بالضبط، ولا تكرر أي جزء مكتوب، ولا تكتب أي مقدمة أو تعليق. إذا توقفت داخل كتلة كود فأكمل الكود مباشرة من نفس السطر.'});
+        fe.done=true;
+      }finally{setSpeaking('__mod',false);refresh(fe);const el=elMap.get(fe);if(el&&fe.done)addFinalActions(el,fe);saveSession();}
+    }else{
+      if(fe){const i=entries.indexOf(fe);entries.splice(i,1);const d=entries[i-1];if(d&&d.type==='round'&&d.content==='الخلاصة')entries.splice(i-1,1);}
+      while(entries.length&&entries[entries.length-1].type==='error')entries.pop();
+      renderAll();
+      await finalize(sig);
+    }
+  }catch(err){
+    addEntry({type:'error',content:err.name==='AbortError'?'تم إيقاف كتابة الخلاصة. يمكنك إكمالها لاحقاً بنفس الزر.':'خطأ: '+err.message});
+  }finally{stats.ms+=Date.now()-t0;saveStats();running=false;speaking.clear();abortCtl=null;setUI();updateStatus();saveSession();}
 }
 async function runCycle(){
   const active=cfg.members.filter(m=>m.on);
@@ -868,6 +944,7 @@ function setUI(){
   $('#sendBtn').textContent=running?'مداخلة':'إرسال';
   $('#input').placeholder=running?'تدخّل في النقاش… (سيقرؤها الأعضاء)':(entries.length?'تابع مع الطاولة: اطلب تعديلاً أو اطرح سؤالاً جديداً…':'اكتب الموضوع أو المهمة للطاولة…');
   updateStatus();renderProjects();
+  const rb=$('#resumeBar');if(rb)rb.hidden=!needsResume();
 }
 
 /* ---------- projects ---------- */
@@ -1398,18 +1475,40 @@ async function attachmentParts(){
   partsCache={pid:cur.id,n:entries.length,parts};
   return parts;
 }
-async function ask({model,system,user,maxTokens,effort,onDelta,signal}){
+async function ask({model,system,user,maxTokens,effort,onDelta,onReason,signal}){
   const parts=await attachmentParts();
   const msgs=c=>[{role:'system',content:system},{role:'user',content:c}];
-  if(!parts.length)return callModel({model,messages:msgs(user),maxTokens,effort,onDelta,signal});
-  try{return await callModel({model,messages:msgs([...parts,{type:'text',text:user}]),maxTokens,effort,onDelta,signal});}
+  if(!parts.length)return callModel({model,messages:msgs(user),maxTokens,effort,onDelta,onReason,signal});
+  try{return await callModel({model,messages:msgs([...parts,{type:'text',text:user}]),maxTokens,effort,onDelta,onReason,signal});}
   catch(err){
     if(err.name==='AbortError'||!/^4\d\d/.test(err.message||''))throw err;
     const t=parts.filter(p=>p.type==='text');
     t.push({type:'text',text:'(ملاحظة: يوجد مرفقات مرئية لم تستطع قراءتها مباشرة؛ اعتمد على ما يذكره زملاؤك عنها.)'});
-    return callModel({model,messages:msgs([...t,{type:'text',text:user}]),maxTokens,effort,onDelta,signal});
+    return callModel({model,messages:msgs([...t,{type:'text',text:user}]),maxTokens,effort,onDelta,onReason,signal});
   }
 }
+
+/* ---------- icon guide ---------- */
+const GUIDE=[
+  ['☰','المحفوظات','إظهار قائمة المشاريع أو إخفاؤها. اسحب حافتها لتكبيرها أو تصغيرها.'],
+  ['＋','جديد','مشروع جديد (في قائمة المحفوظات وأعلى الصفحة).'],
+  ['⤒','استيراد مشروع','فتح ملف مشروع ‎.json‎ نقلته من جهاز آخر.'],
+  ['⤓','تصدير المشروع','بجانب اسم المشروع: يحفظه كملف ‎.json‎ لنقله لجهاز آخر واستيراده.'],
+  ['✎','إعادة تسمية','بجانب اسم المشروع.'],
+  ['🗑','حذف المشروع','بجانب اسم المشروع، ولا يمكن التراجع.'],
+  ['＋','إرفاق ملفات','بجانب خانة الكتابة: صور، فيديو، PDF، Excel، ملفات برمجية. لا تستخدمه لملفات المشاريع.'],
+  ['⤓','المحضر','أعلى الصفحة: نسخة نصية من النقاش للقراءة (‎.md‎)، ولا تُستورد كمشروع.'],
+  ['⭐','التقييم','تقييم الجلسات وتحليل النتائج.'],
+  ['👥','الطاولة','أعضاء الطاولة ونماذجهم (للمالك فقط).',true],
+  ['⚙','الإعدادات','مفتاح OpenRouter، وGitHub، وعدد الجولات.'],
+  ['A','حسابي','الحرف الأول من اسمك: بيانات الحساب وتبديله.'],
+  ['■','إيقاف','يظهر أثناء النقاش فقط، ويوقفه فوراً لتوفير التكلفة.'],
+  ['↻','أكمل إلى الخلاصة','يظهر عند انقطاع جلسة: يكتب الخلاصة فقط بدون إعادة النقاش.'],
+  ['⬆','حفظ في GitHub','تحت الخلاصة: يرفع الملفات للمستودع ويبدأ البناء.'],
+  ['⬇','تنزيل الملفات ZIP','تحت الخلاصة: ملفات المشروع مضغوطة.'],
+  ['🔄','حالة البناء','تحت الخلاصة: نتيجة بناء التطبيق في GitHub.']
+];
+function guideHTML(){return '<div class="guide">'+GUIDE.map(g=>`<div${g[3]?' data-owner':''}><b class="ic">${g[0]}</b><span><strong>${g[1]}</strong>: ${g[2]}</span></div>`).join('')+'</div>';}
 
 /* ---------- accounts & greeting ---------- */
 let greetState={active:false,dismissed:false,text:''};
@@ -1491,6 +1590,8 @@ async function greetUser(){
 
 /* ---------- wiring ---------- */
 $('#labBtn').onclick=()=>openLab('new');
+$('#helpBtn').onclick=()=>{$('#helpBody').innerHTML=guideHTML();$('#helpDlg').showModal();};
+$('#resumeBtn').onclick=resumeFinal;
 $('#attachBtn').onclick=()=>{$('#attachInput').value='';$('#attachInput').click();};
 $('#attachInput').onchange=e=>{const f=[...(e.target.files||[])];if(f.length)addFiles(f);};
 (function(){const comp=$('.composer');
