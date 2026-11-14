@@ -1,0 +1,1553 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>المختبر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<style>
+:root{
+  --bg:#f5f4ef;--panel:#ffffff;--panel-2:#faf9f5;--ink:#1c1b19;--muted:#6d6b64;--line:#e5e2d9;
+  --accent:#0f766e;--accent-ink:#ffffff;--accent-soft:#e2f2ef;--danger:#b42318;--danger-soft:#fdecea;
+  --note:#fff8e1;--note-line:#f0d98a;--shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.05);
+  --table:#efe9dc;--table-edge:#d9cfb8;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#131312;--panel:#1c1b19;--panel-2:#22211e;--ink:#ecebe5;--muted:#a09e95;--line:#2f2e2a;
+  --accent:#2dd4bf;--accent-ink:#04201c;--accent-soft:#123632;--danger:#f97066;--danger-soft:#3a1714;
+  --note:#2b2614;--note-line:#5c4f1d;--shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.3);
+  --table:#2a2720;--table-edge:#3d382d;
+}}
+:root[data-theme="dark"]{
+  --bg:#131312;--panel:#1c1b19;--panel-2:#22211e;--ink:#ecebe5;--muted:#a09e95;--line:#2f2e2a;
+  --accent:#2dd4bf;--accent-ink:#04201c;--accent-soft:#123632;--danger:#f97066;--danger-soft:#3a1714;
+  --note:#2b2614;--note-line:#5c4f1d;--shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.3);
+  --table:#2a2720;--table-edge:#3d382d;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;font-size:15px;line-height:1.7}
+button{font:inherit;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--ink)}
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh}
+header{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:17px;margin:0;font-weight:700;display:flex;align-items:center;gap:8px}
+.logo{width:28px;height:28px;border-radius:50%;background:var(--table);border:2px solid var(--table-edge);display:grid;place-items:center;font-size:14px}
+.status{margin-inline-start:6px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.status.live .dot{background:var(--accent);animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.hbtns{margin-inline-start:auto;display:flex;gap:6px}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:9px;font-size:14px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--panel-2)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.sm{padding:3px 9px;font-size:13px}
+.main{display:grid;grid-template-columns:var(--sw,280px) 6px minmax(0,1fr);min-height:0}
+.main.collapsed{grid-template-columns:minmax(0,1fr)}
+.main.collapsed aside,.main.collapsed .resizer{display:none}
+aside{background:var(--panel);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.resizer{cursor:col-resize;position:relative;background:var(--panel);border-inline-start:1px solid var(--line);touch-action:none}
+.resizer::after{content:"";position:absolute;top:0;bottom:0;inset-inline-start:-1px;width:3px;background:var(--accent);opacity:0;transition:opacity .15s}
+.resizer:hover::after,.resizer.drag::after{opacity:1}
+body.resizing{cursor:col-resize;user-select:none}
+.sbhead{display:flex;align-items:center;gap:8px;padding:14px 14px 10px}
+.sbhead b{font-size:15px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#projSearch{margin:0 14px 10px;border:1px solid var(--line);background:var(--panel-2);border-radius:9px;padding:7px 10px;min-width:0}
+#projList{flex:1;overflow:auto;padding:0 8px 12px;display:flex;flex-direction:column;gap:2px}
+.pi{display:flex;align-items:center;gap:2px;border-radius:10px;padding:2px}
+.pi:hover{background:var(--panel-2)}
+.pi.on{background:var(--accent-soft)}
+.pmain{flex:1;min-width:0;border:none;background:none;text-align:start;padding:7px 8px;color:var(--ink)}
+.pmain b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pmain small{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pact{display:flex;gap:2px;opacity:0;transition:opacity .15s}
+.pi:hover .pact,.pi.on .pact,.pi:focus-within .pact{opacity:1}
+.pact button{border:none;background:none;color:var(--muted);padding:4px 6px;border-radius:6px;font-size:13px}
+.pact button:hover{background:var(--panel);color:var(--ink)}
+.sbempty{color:var(--muted);font-size:13px;text-align:center;padding:20px 8px}
+#tableBtn.live{border-color:var(--accent);color:var(--accent)}
+#tableBtn.live::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite}
+#tableDlg{width:min(560px,calc(100vw - 24px))}
+#tableDlg .dbody{gap:12px}
+#scrim{display:none}
+.curproj{font-weight:600;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tablewrap{position:relative;width:240px;height:240px;margin:6px auto 18px}
+.roundtable{position:absolute;inset:50px;border-radius:50%;background:var(--table);border:3px solid var(--table-edge);display:grid;place-items:center;text-align:center;font-size:12px;color:var(--muted);padding:10px}
+.seat{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;border:3px solid var(--panel);box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;opacity:.92}
+.seat.off{opacity:.25;filter:grayscale(1)}
+.seat.talking{transform:scale(1.15);box-shadow:0 0 0 4px var(--accent-soft),0 0 0 6px var(--accent);opacity:1}
+.seat .lbl{position:absolute;top:44px;font-size:11px;color:var(--muted);white-space:nowrap;font-weight:500}
+.seat.mod{border-radius:12px}
+.roster{display:flex;flex-direction:column;gap:8px}
+.rm{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.rm .sw{width:10px;height:10px;border-radius:50%;margin-top:7px;flex:none}
+.rm b{font-size:14px}
+.rm small{display:block;color:var(--muted);font-size:12px;direction:ltr;text-align:right;word-break:break-all}
+.rm p{margin:2px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
+.rm.off{opacity:.45}
+.chatcol{display:grid;grid-template-rows:1fr auto;min-height:0;min-width:0}
+#feed{overflow:auto;padding:22px 22px 10px;display:flex;flex-direction:column;gap:14px}
+.welcome{max-width:640px;margin:6vh auto;text-align:center}
+.welcome h2{font-size:24px;margin:0 0 6px}
+.welcome p{color:var(--muted);margin:0 0 18px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chip{border:1px solid var(--line);background:var(--panel);padding:8px 12px;border-radius:999px;font-size:13px;color:var(--ink);text-align:start}
+.chip:hover{border-color:var(--accent)}
+.msg{display:flex;gap:10px;align-items:flex-start;max-width:900px;width:100%}
+.av{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px}
+.bubble{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px;min-width:0;flex:1;box-shadow:var(--shadow)}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:2px}
+.meta .nm{font-weight:700;color:var(--ink);font-size:14px}
+.meta .mdl{direction:ltr;font-family:ui-monospace,monospace;font-size:11px;background:var(--panel-2);padding:0 6px;border-radius:5px;border:1px solid var(--line)}
+.meta .rd{margin-inline-start:auto}
+.msg.user{flex-direction:row-reverse;margin-inline-start:auto;max-width:720px}
+.msg.user .bubble{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.msg.user .meta,.msg.user .meta .nm{color:var(--accent-ink)}
+.msg.final .bubble{border:2px solid var(--accent)}
+.msg.final .meta .nm::after{content:" — الخلاصة الموحّدة";font-weight:500;color:var(--accent)}
+.divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;font-weight:600;max-width:900px;width:100%}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.note{max-width:900px;width:100%;background:var(--note);border:1px dashed var(--note-line);border-radius:12px;padding:8px 14px;font-size:13px}
+.note p{margin:0}
+.err{max-width:900px;width:100%;background:var(--danger-soft);color:var(--danger);border-radius:10px;padding:8px 14px;font-size:13px}
+.md p{margin:.35em 0}
+.md h1,.md h2,.md h3{font-size:16px;margin:.8em 0 .3em}
+.md ul,.md ol{margin:.3em 0;padding-inline-start:1.4em}
+.md pre{direction:ltr;text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;max-height:320px;font-size:12.5px;line-height:1.5}
+.md code{font-family:ui-monospace,monospace;font-size:.9em}
+.md table{border-collapse:collapse;display:block;overflow:auto;font-size:13px}
+.md th,.md td{border:1px solid var(--line);padding:4px 8px}
+.msg.user .md pre{color:var(--ink)}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.typing{display:inline-flex;gap:4px;padding:6px 0}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:pulse 1s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+.composer{border-top:1px solid var(--line);background:var(--panel);padding:12px 18px}
+.cbox{display:flex;gap:8px;align-items:flex-end;max-width:960px;margin:0 auto}
+.cbox textarea{flex:1;resize:none;min-height:46px;max-height:180px;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;outline:none}
+.cbox textarea:focus{border-color:var(--accent)}
+.toolbar{display:flex;gap:6px;align-items:center;max-width:960px;margin:0 auto 8px;flex-wrap:wrap;font-size:13px}
+.toolbar select{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:4px 8px;max-width:220px;min-width:0}
+.toolbar .sp{flex:1}
+.hint{max-width:960px;margin:6px auto 0;font-size:12px;color:var(--muted)}
+dialog{border:none;border-radius:16px;padding:0;background:var(--panel);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35);width:min(780px,calc(100vw - 24px));max-height:calc(100dvh - 24px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dhead{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
+.dhead h3{margin:0;font-size:16px}
+.dhead .btn{margin-inline-start:auto}
+.dbody{padding:16px 18px;display:flex;flex-direction:column;gap:18px}
+fieldset{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0}
+legend{font-weight:700;font-size:14px;padding:0 6px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.f input,.f select,.f textarea{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:7px 10px;width:100%}
+.ltr{direction:ltr;text-align:left}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.mcard{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;grid-template-columns:auto 1fr 1fr 2fr auto auto;gap:8px;align-items:center;margin-bottom:8px;background:var(--panel-2)}
+.mcard textarea{grid-column:1/-1;resize:vertical;min-height:44px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;font-size:13px}
+.mcard input[type=text]{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 8px;min-width:0;width:100%}
+.mcard input[type=color]{width:34px;height:30px;border:none;background:none;padding:0}
+.small{font-size:12px;color:var(--muted)}
+.ok{color:var(--accent)}
+.bad{color:var(--danger)}
+.dfoot{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--panel)}
+#preview{width:min(1280px,calc(100vw - 24px));height:calc(100dvh - 24px)}
+#preview[open]{display:flex;flex-direction:column}
+#preview iframe{flex:1;border:none;background:#fff;width:100%}
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+#toast.show{opacity:1}
+#lab{width:min(1100px,calc(100vw - 24px));height:calc(100dvh - 24px)}
+#lab[open]{display:flex;flex-direction:column}
+.labgrid{flex:1;display:grid;grid-template-columns:260px 1fr;min-height:0}
+.lablist{border-inline-end:1px solid var(--line);overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--panel-2)}
+.lablist h4{margin:0 0 2px;font-size:13px;color:var(--muted)}
+.labmain{overflow:auto;padding:16px 18px}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tab.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.ev{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel);text-align:start;width:100%;color:var(--ink);display:flex;gap:10px;align-items:center}
+.ev.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.ev .tx{flex:1;min-width:0}
+.ev b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev small{color:var(--muted);font-size:12px}
+.pill{font-weight:700;font-size:13px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);flex:none}
+.pill.mid{background:var(--note);color:#a16207}.pill.low{background:var(--danger-soft);color:var(--danger)}
+.checks label{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:var(--panel-2);cursor:pointer;font-size:14px}
+.checks input{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--panel-2)}
+.kpi small{color:var(--muted);font-size:12px;display:block}.kpi b{font-size:22px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.card h4{margin:0 0 10px;font-size:14px}
+.hbar{display:grid;grid-template-columns:190px 1fr 48px;gap:8px;align-items:center;font-size:13px;margin-bottom:7px}
+.hbar .tr{display:flex;height:12px;background:var(--panel-2);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.hbar .fl{height:100%;background:var(--accent);border-radius:6px}
+.hbar .pc{text-align:end;font-weight:600}
+.vbars{display:flex;gap:10px;align-items:flex-end;height:190px;overflow-x:auto;padding-bottom:4px}
+.vb{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:60px;height:100%;justify-content:flex-end;font-size:11px;color:var(--muted)}
+.vb .bar{width:30px;background:var(--accent);border-radius:6px 6px 0 0;min-height:3px}
+.vb .v{color:var(--ink);font-weight:700;font-size:12px}
+.vb .n{max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.snap{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;font-size:13px}
+.snap small{display:block;color:var(--muted);font-size:12px}
+.insight{background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:start}
+.tbl td.l{direction:ltr;text-align:left;font-family:ui-monospace,monospace;font-size:12px}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:24px 8px}
+body:not(.owner) [data-owner]{display:none!important}
+.attach{padding:0;width:46px;height:46px;justify-content:center;font-size:24px;border-radius:12px;flex:none;line-height:1}
+.pending{display:flex;flex-wrap:wrap;gap:6px;max-width:960px;margin:0 auto 8px}
+.pending:empty{display:none}
+.achip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel-2);border-radius:10px;padding:4px 8px;font-size:12.5px;max-width:260px;color:var(--ink)}
+.achip img{width:30px;height:30px;object-fit:cover;border-radius:6px;flex:none}
+.achip .an{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.achip small{color:var(--muted);flex:none;font-size:11px}
+.achip button{border:none;background:none;color:var(--muted);padding:0 2px;font-size:14px}
+.achip.busy{opacity:.65}
+.achip.img{cursor:zoom-in}
+.achips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.msg.user .achip{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.35);color:inherit}
+.msg.user .achip small{color:inherit;opacity:.8}
+.composer.drag{outline:2px dashed var(--accent);outline-offset:-6px}
+#auth{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:16px;overflow:auto}
+.authcard{width:min(440px,100%);background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:28px 24px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px}
+.authcard .lg{width:58px;height:58px;border-radius:50%;background:var(--table);border:3px solid #c9a227;display:grid;place-items:center;font-size:24px;margin:0 auto}
+.authcard h2{margin:0;text-align:center;font-size:22px}
+.authcard p{margin:0;text-align:center;color:var(--muted);font-size:14px}
+.accts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.acct{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--panel-2);text-align:start;color:var(--ink);font-size:14px}
+.acct:hover{border-color:var(--accent)}
+.aav{width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;flex:none}
+.err2{color:var(--danger);font-size:13px;min-height:1.2em;text-align:center}
+.sep{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+.sep::before,.sep::after{content:"";flex:1;height:1px;background:var(--line)}
+#acctBtn{padding:4px 10px 4px 6px}
+#acctBtn .aav{width:26px;height:26px;font-size:13px}
+#acctDlg{width:min(400px,calc(100vw - 24px))}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px;align-items:baseline}
+.kv small{color:var(--muted)}
+.greet{max-width:900px;width:100%;border:1.5px solid #c9a227;background:linear-gradient(135deg,rgba(201,162,39,.12),transparent 60%),var(--panel);border-radius:16px;padding:12px 16px;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow)}
+.greet .av{background:#a16207}
+.greet .gb{flex:1;min-width:0}
+.greet .gn{font-weight:700;font-size:13px;color:#b08a12;margin-bottom:2px}
+.greet .gx{border:none;background:none;color:var(--muted);font-size:15px;padding:2px 4px}
+.stars{display:flex;gap:2px}
+.stars button{border:none;background:none;font-size:30px;color:var(--line);padding:0 2px;line-height:1}
+.stars button.on{color:#e0a800}
+@media (max-width:860px){
+  .labgrid{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .lablist{border-inline-end:none;border-bottom:1px solid var(--line);max-height:170px}
+  .hbar{grid-template-columns:120px 1fr 42px}
+  .main,.main.collapsed{grid-template-columns:minmax(0,1fr)}
+  .resizer,.main.collapsed .resizer{display:none}
+  .main aside,.main.collapsed aside{display:flex;position:fixed;top:0;bottom:0;right:0;width:min(85vw,320px);z-index:40;transform:translateX(105%);transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.25)}
+  .main aside,.main.collapsed aside{visibility:hidden;transition:transform .2s,visibility .2s}
+  body.mopen .main aside{transform:none;visibility:visible}
+  html,body{overflow-x:hidden}
+  body.mopen #scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:39}
+  .pact{opacity:1}
+  .curproj{max-width:130px}
+  header h1 .tt,#newBtn{display:none!important}
+  header .btn{padding:6px 8px}
+  #statusText{display:none}
+  header{gap:6px}
+  #acctBtn{padding:4px}
+  header{gap:8px}
+  .hbtns{gap:4px}
+  .toolbar select{max-width:150px}
+  #feed{padding:16px}
+  .hbtns .t{display:none}
+  .mcard{grid-template-columns:auto 1fr 1fr auto auto}
+  .mcard .mm{grid-column:1/-1;order:5}
+  .mcard textarea{order:6}
+  header{padding:10px 16px}
+  .composer{padding:10px 16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <button class="btn" id="sbToggle" title="إظهار/إخفاء المحفوظات" aria-label="المحفوظات">☰</button>
+    <h1><span class="logo">◯</span><span class="tt">المختبر</span></h1>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">جاهز</span></div>
+    <div class="hbtns">
+      <button class="btn danger" id="stopBtn" hidden>■ <span class="t">إيقاف</span></button>
+      <button class="btn" id="tableBtn" data-owner title="الطاولة والأعضاء (للمالك فقط)">👥 <span class="t">الطاولة</span></button>
+      <button class="btn" id="labBtn" title="تقييم الجلسات">⭐ <span class="t">التقييم</span></button>
+      <button class="btn" id="exportBtn" title="تصدير المحضر">⤓ <span class="t">تصدير</span></button>
+      <button class="btn" id="newBtn" title="مشروع جديد">＋ <span class="t">مشروع جديد</span></button>
+      <button class="btn" id="settingsBtn">⚙ <span class="t">الإعدادات</span></button>
+      <button class="btn" id="acctBtn" title="حسابي"><span class="aav" id="acctAv">؟</span><span class="t" id="acctName"></span></button>
+    </div>
+  </header>
+  <div class="main">
+    <aside id="sidebar">
+      <div class="sbhead"><b>المحفوظات</b><button class="btn sm" id="projNew" title="مشروع جديد">＋ جديد</button><button class="btn sm" id="projImport" title="استيراد مشروع من ملف (نقل من جهاز آخر)">⤒</button><input type="file" id="projFile" accept=".json,application/json" hidden><button class="btn sm" id="sbClose" title="إغلاق القائمة">✕</button></div>
+      <input type="search" id="projSearch" placeholder="بحث في المشاريع…">
+      <div id="projList"></div>
+    </aside>
+    <div class="resizer" id="resizer" title="اسحب لتغيير العرض · نقرتان لإرجاع العرض الافتراضي" role="separator" aria-orientation="vertical"></div>
+    <div class="chatcol">
+      <div id="feed"></div>
+      <div class="composer">
+        <div class="toolbar">
+          <span class="small">المشروع:</span><span class="curproj" id="curProj"></span>
+          <span class="sp"></span>
+          <span class="small">نوع المخرج:</span><select id="outSel" title="نوع المخرج"><option value="auto">تلقائي</option><option value="web">صفحة إلكترونية</option><option value="app">تطبيق ويب</option><option value="flutter">تطبيق Flutter</option><option value="text">نصوص وتحليل</option></select>
+        </div>
+        <div class="pending" id="pending"></div>
+        <div class="cbox">
+          <button class="btn attach" id="attachBtn" type="button" title="إرفاق ملفات: صور، فيديو، PDF، Excel، ملفات برمجية">＋</button>
+          <input type="file" id="attachInput" multiple hidden accept="image/*,video/*,application/pdf,.pdf,.txt,.md,.csv,.tsv,.json,.xml,.yaml,.yml,.html,.css,.js,.jsx,.ts,.tsx,.py,.dart,.java,.kt,.swift,.c,.h,.cpp,.cs,.go,.rs,.php,.rb,.sql,.sh,.xlsx,.xls,.ods,.log,.toml,.gradle,.vue">
+          <textarea id="input" rows="1" placeholder="اكتب الموضوع أو المهمة للطاولة…"></textarea>
+          <button class="btn primary" id="sendBtn">إرسال</button>
+        </div>
+        <div class="hint" id="hint">Enter للإرسال · Shift+Enter لسطر جديد · ＋ أو السحب والإفلات لإرفاق الملفات · يمكنك التدخل أثناء النقاش</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<dialog id="settings">
+  <div class="dhead"><h3>الإعدادات</h3><button class="btn sm" data-close>✕</button></div>
+  <div class="dbody">
+    <fieldset>
+      <legend>OpenRouter</legend>
+      <label class="f">مفتاح API
+        <div style="display:flex;gap:6px">
+          <input type="password" id="sKey" class="ltr" placeholder="sk-or-v1-..." autocomplete="off">
+          <button class="btn sm" id="showKey" type="button">إظهار</button>
+          <button class="btn sm" id="testKey" type="button">اختبار</button>
+        </div>
+      </label>
+      <div class="small" id="keyMsg">يُحفظ المفتاح في متصفحك فقط، والطلبات تذهب مباشرة إلى OpenRouter.</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>GitHub (لحفظ الكود وبناء تطبيقات Flutter)</legend>
+      <div class="row">
+        <label class="f">المستودع<input type="text" id="sGhRepo" class="ltr" placeholder="username/my-app"></label>
+        <label class="f">الفرع (اختياري)<input type="text" id="sGhBranch" class="ltr" placeholder="main"></label>
+      </div>
+      <label class="f" style="margin-top:10px">مفتاح الوصول (Fine-grained token)
+        <div style="display:flex;gap:6px">
+          <input type="password" id="sGhToken" class="ltr" placeholder="github_pat_..." autocomplete="off">
+          <button class="btn sm" id="testGh" type="button">اختبار</button>
+        </div>
+      </label>
+      <div class="small" id="ghMsg">أنشئ المفتاح من GitHub › Settings › Developer settings › Fine-grained tokens، لهذا المستودع فقط، بصلاحيات: Contents (قراءة وكتابة)، Workflows (قراءة وكتابة)، Actions (قراءة). يُحفظ في متصفحك فقط.</div>
+    </fieldset>
+
+    <fieldset data-owner>
+      <legend>أعضاء الطاولة (للمالك فقط)</legend>
+      <div class="small" style="margin-bottom:8px">اكتب معرّف النموذج من OpenRouter أو اختره من القائمة. <span id="modelsMsg">جارٍ تحميل قائمة النماذج…</span>
+        <button class="btn sm" id="recPick" type="button">النماذج الموصى بها</button> <button class="btn sm" id="autoPick" type="button">أحدث النماذج تلقائياً</button></div>
+      <div id="sMembers"></div>
+      <button class="btn sm" id="addMember" type="button">＋ إضافة عضو</button>
+    </fieldset>
+
+    <fieldset data-owner>
+      <legend>رئيس الجلسة (يقيّم التوافق ويكتب الخلاصة)</legend>
+      <div class="row">
+        <label class="f">الاسم<input type="text" id="sModName"></label>
+        <label class="f">النموذج<input type="text" id="sModModel" class="ltr" list="modelList"></label>
+      </div>
+      <label class="f" style="margin-top:10px">الوصف (دوره وطريقة عمله)<textarea id="sModRole" rows="4"></textarea></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>إدارة النقاش</legend>
+      <div class="row">
+        <label class="f">أقصى عدد للجولات<input type="number" id="sRounds" min="1" max="8"></label>
+        <label class="f">حد الرموز لكل رد<input type="number" id="sMax" min="300" step="100"></label>
+        <label class="f">حد رموز الخلاصة<input type="number" id="sFinalMax" min="1000" step="500"></label>
+        <label class="f">الإبداعية (temperature)<input type="number" id="sTemp" min="0" max="2" step="0.1"></label>
+        <label class="f">تفكير الأعضاء<select id="sEffort"><option value="off">بدون</option><option value="low">منخفض</option><option value="medium">متوسط</option><option value="high">عالٍ</option></select></label>
+        <label class="f">تفكير رئيس الجلسة<select id="sFinalEffort"><option value="off">بدون</option><option value="low">منخفض</option><option value="medium">متوسط</option><option value="high">عالٍ</option></select></label>
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px"><input type="checkbox" id="sAuto"> إنهاء النقاش مبكراً عند الوصول إلى توافق</label>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:14px"><input type="checkbox" id="sAudit"> فلتر الإجماع الخاطئ: يدقّق رئيس الجلسة النتيجة قبل الخلاصة، ويفرض جولة تصحيح بطريقة يحددها إذا وجد خطأً</label>
+      <label class="f" style="margin-top:8px;max-width:220px">أقصى جولات تصحيح<input type="number" id="sAuditRounds" min="1" max="3"></label>
+    </fieldset>
+  </div>
+  <div class="dfoot"><button class="btn" data-close>إلغاء</button><button class="btn primary" id="saveSettings">حفظ</button></div>
+</dialog>
+
+<dialog id="preview">
+  <div class="dhead"><h3>معاينة النتيجة</h3>
+    <div style="margin-inline-start:auto;display:flex;gap:6px">
+      <button class="btn sm" id="pvDownload">تنزيل HTML</button>
+      <button class="btn sm" data-close>✕</button>
+    </div>
+  </div>
+  <iframe id="pvFrame" sandbox="allow-scripts allow-popups allow-modals"></iframe>
+</dialog>
+
+<dialog id="tableDlg">
+  <div class="dhead"><h3>👥 الطاولة والأعضاء</h3><button class="btn sm" data-close>✕</button></div>
+  <div class="dbody">
+    <div class="tablewrap" id="tablewrap"><div class="roundtable" id="tableCenter">الطاولة</div></div>
+    <div class="roster" id="roster"></div>
+    <button class="btn sm" id="tblSettings" style="align-self:flex-start">⚙ تعديل الأعضاء والأدوار</button>
+  </div>
+</dialog>
+<div id="scrim"></div>
+<div id="auth" hidden>
+  <div class="authcard">
+    <div class="lg">◯</div>
+    <h2>مرحباً بك في المختبر</h2>
+    <p>خبراء ذكاء اصطناعي على طاولة واحدة، يتناقشون ويدقّقون حتى يتفقوا على إجابة واحدة لك.</p>
+    <div id="authExisting" hidden>
+      <div class="sep">حساباتك على هذا الجهاز</div>
+      <div class="accts" id="authList"></div>
+      <div class="sep" style="margin-top:14px">أو أنشئ حساباً جديداً</div>
+    </div>
+    <label class="f">الاسم<input type="text" id="authName" autocomplete="name" placeholder="اسمك"></label>
+    <label class="f">البريد الإلكتروني<input type="email" id="authEmail" class="ltr" autocomplete="email" placeholder="name@example.com"></label>
+    <div class="err2" id="authErr"></div>
+    <button class="btn primary" id="authCreate" style="justify-content:center;padding:10px">إنشاء حساب والدخول</button>
+    <p class="small">الحسابات حالياً محفوظة على هذا الجهاز فقط، وستنتقل إلى خادم المنصة عند الإطلاق.</p>
+  </div>
+</div>
+<dialog id="acctDlg">
+  <div class="dhead"><h3>حسابي</h3><button class="btn sm" data-close>✕</button></div>
+  <div class="dbody" id="acctBody"></div>
+  <div class="dfoot"><button class="btn" id="acctSwitch">تبديل الحساب / تسجيل الخروج</button></div>
+</dialog>
+<script type="text/plain" id="wfYaml">
+# أُنشئ بواسطة طاولة النماذج: يبني تطبيق Flutter (APK + ويب) بعد كل حفظ
+name: Flutter Build
+
+on:
+  push:
+    paths:
+      - "lib/**"
+      - "pubspec.yaml"
+      - "assets/**"
+      - ".github/workflows/flutter-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: flutter-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate platform folders
+        run: |
+          mkdir -p /tmp/keep
+          cp -r lib pubspec.yaml /tmp/keep/
+          [ -d assets ] && cp -r assets /tmp/keep/ || true
+          [ -d test ] && cp -r test /tmp/keep/ || true
+          NAME=$(grep -E '^name:' pubspec.yaml | awk '{print $2}' | tr -d '"\r')
+          flutter create . --project-name "${NAME:-app}" --platforms=android,web --org com.roundtable
+          rm -rf lib test
+          cp -r /tmp/keep/lib . && cp /tmp/keep/pubspec.yaml .
+          [ -d /tmp/keep/assets ] && cp -r /tmp/keep/assets . || true
+          [ -d /tmp/keep/test ] && cp -r /tmp/keep/test . || true
+
+      - run: flutter pub get
+
+      - name: Analyze
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze.log || { grep -E "error •" analyze.log | head -40 | sed 's/^ *//; s/^/::error::/'; exit 1; }
+
+      - name: Build Android APK
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee apk.log || { grep -iE "error" apk.log | head -40 | sed 's/^/::error::/'; exit 1; }
+
+      - name: Build Web
+        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy-web:
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+</script>
+
+<dialog id="lab">
+  <div class="dhead"><h3>⭐ التقييم</h3><button class="btn sm" data-close>✕</button></div>
+  <div class="labgrid"><div class="lablist" id="labList"></div><div class="labmain" id="labMain"></div></div>
+</dialog>
+
+<datalist id="modelList"></datalist>
+<div id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const store={
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const DEFAULT_CFG={
+  apiKey:'',rounds:3,maxTokens:6000,finalMaxTokens:16000,temperature:0.7,effort:'low',finalEffort:'medium',gh:{token:'',repo:'',branch:''},autoStop:true,auditOn:true,auditRounds:1,autoPicked:false,
+  members:[
+    {id:'claude',name:'Claude',alias:'المهندس',icon:'🏗️',model:'anthropic/claude-sonnet-5.5',color:'#d97757',on:true,
+     role:'المهندس المنظّم: يركّز على البنية والوضوح وجودة التنفيذ والكود، ويرتّب الأفكار في خطة متماسكة.'},
+    {id:'gpt',name:'ChatGPT',alias:'العملي',icon:'🧭',model:'openai/gpt-6.1-sol',color:'#10a37f',on:true,
+     role:'العملي الشامل: يقترح حلولاً قابلة للتطبيق فوراً ويغطي الجوانب التي قد تُنسى (تجربة المستخدم، الحالات الخاصة).'},
+    {id:'gemini',name:'Gemini',alias:'المحلل',icon:'📊',model:'google/gemini-4-carbon',color:'#4285f4',on:true,
+     role:'محلل البيانات: يركّز على الأرقام والمقاييس (KPIs) وأنسب طرق التصوير البصري للبيانات.'},
+    {id:'grok',name:'Grok',alias:'المتحدّي',icon:'⚔️',model:'x-ai/grok-4.7',color:'#6b7280',on:true,
+     role:'محامي الشيطان: يتحدى الافتراضات بصراحة ويكشف الثغرات والمخاطر، لكنه يقترح بديلاً لكل اعتراض.'},
+    {id:'deepseek',name:'DeepSeek',alias:'المدقق',icon:'🔍',model:'deepseek/deepseek-v4-pro-0813',color:'#4d6bfe',on:true,
+     role:'المدقق المنطقي: يراجع الحسابات والمنطق والكود خطوة بخطوة، ويقترح دائماً الحل الأبسط والأقل تكلفة في التنفيذ.'}
+  ],
+  moderator:{name:'رئيس الجلسة',model:'anthropic/claude-fable-5.2',color:'#a16207',
+   role:'رئيس جلسة محايد وخبير: يدير النقاش ولا ينحاز لأي عضو. بعد كل جولة يقيّم مدى التوافق ويحدد النقاط الخلافية التي يجب حسمها. في النهاية يدمج أفضل ما اتفق عليه الأعضاء في إجابة واحدة كاملة، وعند الخلاف يرجّح الحجة الأقوى لا رأي الأغلبية. عند طلب داشبورد أو واجهة يكتب ملف HTML احترافياً كاملاً يعمل مباشرة: تصميم نظيف، مؤشرات أداء (KPIs) واضحة في الأعلى، رسوم بيانية مناسبة لنوع كل بيان، فلاتر تفاعلية، ودعم كامل للعربية واتجاه RTL.'}
+};
+let cfg=Object.assign(JSON.parse(JSON.stringify(DEFAULT_CFG)),store.get('rt_cfg',{}));
+const PRESET='2026-11';
+const RECOMMENDED={claude:'anthropic/claude-sonnet-5.5',gpt:'openai/gpt-6.1-sol',gemini:'google/gemini-4-carbon',grok:'x-ai/grok-4.7',deepseek:'deepseek/deepseek-v4-pro-0813',moderator:'anthropic/claude-fable-5.2'};
+function applyRecommended(t){t.members.forEach(m=>{if(RECOMMENDED[m.id])m.model=RECOMMENDED[m.id];});t.moderator.model=RECOMMENDED.moderator;t.maxTokens=Math.max(+t.maxTokens||0,6000);t.preset=PRESET;t.autoPicked=true;}
+if(cfg.preset!==PRESET){applyRecommended(cfg);store.set('rt_cfg',cfg);}
+if(!cfg.dsAdded){if(!cfg.members.some(m=>m.id==='deepseek')&&cfg.members.length<6){const d=DEFAULT_CFG.members.find(m=>m.id==='deepseek');cfg.members.push(JSON.parse(JSON.stringify(d)));}cfg.dsAdded=true;store.set('rt_cfg',cfg);}
+if(!cfg.moderator.role){cfg.moderator.role=DEFAULT_CFG.moderator.role;store.set('rt_cfg',cfg);}
+let projects=store.get('rt_projects',null);
+if(!Array.isArray(projects)||!projects.length){projects=[{id:'p'+Date.now(),name:'المشروع الأول',entries:store.get('rt_session',[]),stats:Object.assign(newStats(),store.get('rt_stats',{})),outType:'auto',updated:Date.now()}];}
+let cur=projects.find(p=>p.id===store.get('rt_cur',''))||projects[0];
+let entries=cur.entries;
+const DEF_ALIAS={claude:['المهندس','🏗️'],gpt:['العملي','🧭'],gemini:['المحلل','📊'],grok:['المتحدّي','⚔️'],deepseek:['المدقق','🔍']};
+cfg.members.forEach(m=>{const d=DEF_ALIAS[m.id];if(!m.alias)m.alias=d?d[0]:((m.role||'').split(':')[0].trim().slice(0,20)||'عضو');if(!m.icon)m.icon=d?d[1]:'◆';});
+store.set('rt_cfg',cfg);
+let accounts=store.get('rt_accounts',[]);
+let account=accounts.find(a=>a.id===store.get('rt_account',''))||null;
+const isOwner=()=>!!(account&&account.role==='owner');
+const aliasOf=m=>m.alias||'عضو';
+const memberOfEntry=e=>cfg.members.find(x=>(e.mid&&x.id===e.mid)||x.name===e.name||x.alias===e.name);
+function memberLabel(e){const m=memberOfEntry(e);return m?aliasOf(m):e.name;}
+function dispName(e){if(e.type!=='member')return e.name;const m=memberOfEntry(e);if(!m)return e.name;return isOwner()?aliasOf(m)+' · '+m.name:aliasOf(m);}
+function myProjects(){return account?projects.filter(p=>p.owner===account.id):[];}
+let running=false,abortCtl=null,models=[];
+const speaking=new Set();
+const elMap=new Map();
+
+/* ---------- helpers ---------- */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function md(s){
+  try{ if(window.marked&&window.DOMPurify) return DOMPurify.sanitize(marked.parse(s||'',{breaks:true,gfm:true})); }catch(e){}
+  return esc(s).replace(/\n/g,'<br>');
+}
+const initial=n=>(String(n||'?').trim()[0]||'?').toUpperCase();
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),2600);}
+function saveSession(){cur.updated=Date.now();if(account){account.lastProject=cur.id;try{localStorage.setItem('rt_accounts',JSON.stringify(accounts));}catch(e){}}try{localStorage.setItem('rt_projects',JSON.stringify(projects));localStorage.setItem('rt_cur',JSON.stringify(cur.id));}catch(e){if(!saveSession._w){saveSession._w=1;toast('تعذّر الحفظ: مساحة التخزين ممتلئة، احذف مشاريع قديمة');}}}
+function saveCfg(){store.set('rt_cfg',cfg);}
+function nearBottom(){const f=$('#feed');return f.scrollHeight-f.scrollTop-f.clientHeight<140;}
+function scrollDown(soft){const f=$('#feed');if(!soft||nearBottom())f.scrollTop=f.scrollHeight;}
+function abortErr(){const e=new Error('aborted');e.name='AbortError';return e;}
+function extractHTML(s){const m=(s||'').match(/```html\s*([\s\S]*?)```/i);return m?m[1].trim():null;}
+function parseJSON(s){const m=(s||'').match(/\{[\s\S]*\}/);if(!m)return null;try{return JSON.parse(m[0])}catch(e){return null}}
+function download(name,text,type){const b=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+
+/* ---------- table & roster ---------- */
+function renderTable(){
+  const wrap=$('#tablewrap');wrap.querySelectorAll('.seat').forEach(s=>s.remove());
+  const W=240,R=100,cx=W/2,cy=W/2;
+  const ms=cfg.members;
+  const mod=document.createElement('div');
+  mod.className='seat mod'+(speaking.has('__mod')?' talking':'');
+  mod.style.background=cfg.moderator.color;mod.style.left=cx+'px';mod.style.top=(cy-R)+'px';
+  mod.innerHTML='★<span class="lbl">'+esc(cfg.moderator.name)+'</span>';wrap.appendChild(mod);
+  ms.forEach((m,i)=>{
+    const a=(-90+(360/(ms.length+1))*(i+1))*Math.PI/180;
+    const s=document.createElement('div');
+    s.className='seat'+(m.on?'':' off')+(speaking.has(m.id)?' talking':'');
+    s.style.background=m.color;s.style.left=(cx+R*Math.cos(a))+'px';s.style.top=(cy+R*Math.sin(a))+'px';
+    s.innerHTML=esc(m.icon||initial(m.name))+'<span class="lbl">'+esc(aliasOf(m))+'</span>';wrap.appendChild(s);
+  });
+  $('#tableCenter').textContent=running?'النقاش جارٍ':'الطاولة';
+  $('#roster').innerHTML=[...ms.map(m=>`<div class="rm${m.on?'':' off'}"><span class="sw" style="background:${esc(m.color)}"></span><div><b>${esc(m.icon||'')} ${esc(aliasOf(m))} · ${esc(m.name)}</b><small>${esc(m.model)}</small><p>${esc(m.role)}</p></div></div>`),
+    `<div class="rm"><span class="sw" style="background:${esc(cfg.moderator.color)};border-radius:3px"></span><div><b>${esc(cfg.moderator.name)}</b><small>${esc(cfg.moderator.model)}</small><p>${esc(cfg.moderator.role||'يقيّم التوافق بعد كل جولة ويكتب الإجابة الموحّدة.')}</p></div></div>`].join('');
+}
+function updateStatus(){
+  const names=[...speaking].map(id=>{if(id==='__mod')return cfg.moderator.name;const m=cfg.members.find(x=>x.id===id);return m?aliasOf(m):'';}).filter(Boolean);
+  const st=$('#status');st.classList.toggle('live',running);
+  $('#statusText').textContent=running?(names.length?names.join('، ')+' '+(names.length>1?'يتكلمون…':'يتكلم…'):'النقاش جارٍ…'):'جاهز';
+  renderTable();
+}
+function setSpeaking(id,on){on?speaking.add(id):speaking.delete(id);updateStatus();}
+
+/* ---------- feed ---------- */
+function renderEntry(e){
+  const d=document.createElement('div');
+  if(e.type==='round'){d.className='divider';d.textContent=e.content;return d;}
+  if(e.type==='error'){d.className='err';d.textContent=e.content;return d;}
+  if(e.type==='sys'){d.className='note';d.innerHTML='<span class="md">'+md(e.content)+'</span>';return d;}
+  if(e.type==='note'){d.className='note';d.innerHTML='<b>'+esc(cfg.moderator.name)+':</b> <span class="md">'+md(e.content)+'</span>';return d;}
+  d.className='msg '+e.type;
+  const color=e.type==='user'?'var(--ink)':(e.color||'var(--accent)');
+  const mem=e.type==='member'?memberOfEntry(e):null;
+  const avTxt=e.type==='user'?'أ':(e.type==='final'?'★':(mem&&mem.icon)||initial(dispName(e)));
+  d.innerHTML=`<div class="av" style="background:${esc(color)}">${esc(avTxt)}</div>
+  <div class="bubble"><div class="meta"><span class="nm">${esc(dispName(e))}</span>${e.model&&isOwner()?`<span class="mdl">${esc(e.model)}</span>`:''}${e.round?`<span class="rd">${typeof e.round==='number'?'الجولة '+e.round:esc(e.round)}</span>`:''}${e.interject?'<span class="rd">مداخلة</span>':''}</div>
+  <div class="body md">${e.content?md(e.content):'<span class="typing"><i></i><i></i><i></i></span>'}</div>${e.attachments&&e.attachments.length?'<div class="achips">'+e.attachments.map(a=>chipHTML(a,false)).join('')+'</div>':''}</div>`;
+  d.querySelectorAll('.achip.img').forEach(c=>c.onclick=()=>viewImage(c.dataset.id));
+  if(e.type==='final'&&e.content&&e.done)addFinalActions(d,e);
+  return d;
+}
+function addEntry(e){
+  entries.push(e);
+  const w=$('#feed .welcome');if(w)w.remove();
+  const el=renderEntry(e);$('#feed').appendChild(el);elMap.set(e,el);
+  scrollDown();saveSession();return el;
+}
+function refresh(e){const el=elMap.get(e);if(!el)return;const b=el.querySelector('.body');if(b)b.innerHTML=e.content?md(e.content):'<span class="typing"><i></i><i></i><i></i></span>';}
+function streamInto(e){
+  let pending=false;
+  return full=>{e.content=full;if(pending)return;pending=true;
+    requestAnimationFrame(()=>{pending=false;refresh(e);scrollDown(true);});};
+}
+function addFinalActions(el,e){
+  const bubble=el.querySelector('.bubble');if(bubble.querySelector('.actions'))return;
+  const act=document.createElement('div');act.className='actions';
+  const html=extractHTML(e.content);
+  if(html){
+    const pv=document.createElement('button');pv.className='btn sm primary';pv.textContent='▶ معاينة النتيجة';pv.onclick=()=>openPreview(html);act.appendChild(pv);
+    const dl=document.createElement('button');dl.className='btn sm';dl.textContent='تنزيل HTML';dl.onclick=()=>download('dashboard.html',html,'text/html');act.appendChild(dl);
+  }
+  const files=extractFiles(e.content);
+  if(files.length){
+    const zb=document.createElement('button');zb.className='btn sm primary';zb.textContent='⬇ تنزيل الملفات ('+files.length+') ZIP';zb.onclick=()=>downloadZip(files);act.appendChild(zb);
+  }
+  const gb=document.createElement('button');gb.className='btn sm';gb.textContent='⬆ حفظ في GitHub';gb.onclick=()=>ghSave(e,gb);act.appendChild(gb);
+  if(files.length){
+    const sb=document.createElement('button');sb.className='btn sm';sb.textContent='🔄 حالة البناء';sb.onclick=()=>ghBuildStatus(sb);act.appendChild(sb);
+  }
+  const cp=document.createElement('button');cp.className='btn sm';cp.textContent='نسخ الخلاصة';
+  cp.onclick=async()=>{try{await navigator.clipboard.writeText(e.content);toast('تم النسخ')}catch(err){toast('تعذّر النسخ')}};
+  act.appendChild(cp);bubble.appendChild(act);
+}
+function renderAll(){
+  const f=$('#feed');f.innerHTML='';elMap.clear();
+  if(greetState.active&&!greetState.dismissed)f.appendChild(greetEl());
+  if(!entries.length){f.appendChild(welcome());return;}
+  entries.forEach(e=>{if(e.type==='member'&&!e.content)e.content='_(انقطع الرد)_';const el=renderEntry(e);f.appendChild(el);elMap.set(e,el);});
+  scrollDown();
+}
+function welcome(){
+  const w=document.createElement('div');w.className='welcome';
+  w.innerHTML=`<h2>اطرح موضوعاً على الطاولة</h2><p>يناقشه الخبراء فيما بينهم جولةً بعد جولة، ثم يكتب رئيس الجلسة إجابة واحدة متفقاً عليها. ويمكنك إرفاق صور أو فيديو أو ملفات بزر ＋.</p><div class="chips"></div>`;
+  const ex=['صمّموا لي وكيل تحليل بيانات لمبيعات متجر إلكتروني، وأخرجوه كداشبورد احترافي تفاعلي بملف HTML واحد',
+    'ضعوا خطة إطلاق لتطبيق توصيل محلي في الرياض خلال 90 يوماً',
+    'قارنوا بين بناء نظام CRM داخلي أو شراء نظام جاهز لشركة من 50 موظفاً، واتفقوا على توصية'];
+  ex.forEach(t=>{const b=document.createElement('button');b.className='chip';b.textContent=t;b.onclick=()=>{$('#input').value=t;$('#input').focus();autoGrow();};w.querySelector('.chips').appendChild(b);});
+  return w;
+}
+
+/* ---------- OpenRouter ---------- */
+async function callModel({model,messages,maxTokens,effort,onDelta,signal,noTrack}){
+  const body={model,messages,max_tokens:maxTokens,temperature:cfg.temperature,stream:true};
+  if(effort&&effort!=='off')body.reasoning={effort};
+  body.usage={include:true};
+  const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal,
+    headers:{'Authorization':'Bearer '+cfg.apiKey,'Content-Type':'application/json','X-Title':'AI Round Table'},body:JSON.stringify(body)});
+  if(!res.ok){const t=await res.text();let msg=t;try{msg=JSON.parse(t).error.message}catch(e){}throw new Error(res.status+': '+msg);}
+  const reader=res.body.getReader(),dec=new TextDecoder();let buf='',full='',usage=null;
+  while(true){
+    const {done,value}=await reader.read();if(done)break;
+    buf+=dec.decode(value,{stream:true});const lines=buf.split('\n');buf=lines.pop();
+    for(const line of lines){
+      const l=line.trim();if(!l.startsWith('data:'))continue;
+      const d=l.slice(5).trim();if(d==='[DONE]')continue;
+      let j;try{j=JSON.parse(d)}catch(e){continue}
+      if(j.error)throw new Error(j.error.message||'خطأ من المزوّد');
+      if(j.usage)usage=j.usage;
+      const c=j.choices&&j.choices[0]&&j.choices[0].delta&&j.choices[0].delta.content;
+      if(c){full+=c;onDelta&&onDelta(full);}
+    }
+  }
+  if(!noTrack)addUsage(usage);
+  return full;
+}
+
+/* ---------- prompts ---------- */
+const OUT_LABEL={auto:'تلقائي',web:'صفحة إلكترونية',app:'تطبيق ويب',flutter:'تطبيق Flutter',text:'نصوص وتحليل'};
+function outRule(){
+  const t=cur.outType||'auto';
+  const html='ملف HTML كاملاً واحداً قائماً بذاته داخل كتلة ```html ... ``` يعمل مباشرة في المتصفح (CSS وJS بداخله، ويمكنه تحميل مكتبات من cdnjs أو jsdelivr)، باتجاه RTL وبالعربية، بمحتوى أو بيانات تجريبية واقعية إن لم يقدّم المستخدم بيانات، وتصميم احترافي متجاوب مع الجوال';
+  if(t==='web')return 'نوع المخرج المطلوب: صفحة إلكترونية. يجب أن يتضمن "الحل المتفق عليه" '+html+'. اجعلها صفحة متكاملة بأقسام واضحة تناسب المشروع (مثل الواجهة الرئيسية، المزايا، التفاصيل، الدعوة لاتخاذ إجراء، التذييل).';
+  if(t==='app')return 'نوع المخرج المطلوب: تطبيق ويب. يجب أن يتضمن "الحل المتفق عليه" '+html+'. اجعله تطبيقاً تفاعلياً يعمل فعلاً: شاشات متعددة مع تنقّل، نماذج إدخال تعمل، حفظ البيانات في localStorage داخل try/catch، وتصميم بأسلوب تطبيقات الجوال.';
+  if(t==='flutter')return 'نوع المخرج المطلوب: تطبيق Flutter. اكتب مشروع Flutter كاملاً قابلاً للبناء (Dart 3، Material 3، null safety)، يشمل pubspec.yaml وكل ملفات lib/ (الشاشات، الويدجتس، النماذج، إدارة الحالة). صمّم واجهات التطبيق كاملة وبشكل احترافي، بالعربية واتجاه RTL (flutter_localizations مع locale ar). استخدم أقل عدد ممكن من الحزم الخارجية ومن الحزم المعروفة فقط. لا تكتب مجلدات المنصات (android وios وweb) لأنها تُولَّد آلياً عند البناء. مهم جداً: اكتب كل ملف في كتلة كود مستقلة، وقبلها مباشرة سطر بهذا الشكل بالضبط: FILE: المسار (مثل FILE: lib/main.dart). اكتب كل ملف كاملاً ولا تضع "..." بدل الكود.';
+  if(t==='text')return 'نوع المخرج المطلوب: نصوص وتحليل فقط. لا تكتب أي كود HTML أو برمجة. قدّم تحليلاً مكتوباً منظماً بعناوين وجداول Markdown وخطوات عملية.';
+  return 'نوع المخرج: تحدده أنت حسب الطلب. إذا كانت المهمة تطلب واجهة أو داشبورد أو صفحة أو أداة أو تطبيقاً، فضمّن داخل "الحل المتفق عليه" '+html+'. وإلا فقدّم تحليلاً مكتوباً منظماً.';
+}
+function transcriptText(){
+  const lines=entries.filter(e=>['user','member','note','final'].includes(e.type)&&e.content&&!e.failed).map(e=>{
+    const who=e.type==='user'?'صاحب الطاولة (المستخدم)'+(e.attachments&&e.attachments.length?' [أرفق: '+e.attachments.map(a=>a.name).join('، ')+']':''):e.type==='note'?cfg.moderator.name:e.type==='final'?cfg.moderator.name+' — الخلاصة الموحّدة السابقة':memberLabel(e);
+    return '### '+who+(e.round?' ('+(typeof e.round==='number'?'الجولة '+e.round:e.round)+')':'')+'\n'+e.content;});
+  return 'سجل الجلسة حتى الآن:\n\n'+lines.join('\n\n');
+}
+function memberSystem(m){
+  const others=cfg.members.filter(x=>x.on&&x.id!==m.id).map(aliasOf).join('، ');
+  return `أنت «${aliasOf(m)}»، عضو في طاولة نقاش تضم زملاء خبراء هم: ${others}. يدير الجلسة «${cfg.moderator.name}»، وصاحب الطاولة هو المستخدم.
+دورك على الطاولة: ${m.role}
+نوع المخرج الذي يريده صاحب الطاولة في النهاية: ${OUT_LABEL[cur.outType||'auto']}.
+قواعد الطاولة:
+- تكلّم بالعربية بأسلوب حواري طبيعي، وخاطب زملاءك بألقابهم المذكورة فقط.
+- هويتك على الطاولة هي لقبك فقط: لا تذكر اسمك كنموذج ذكاء اصطناعي ولا الشركة التي طوّرتك، ولا تخمّن هوية زملائك.
+- الهدف إجابة واحدة مشتركة متفق عليها، لا الفوز بالنقاش. إذا اقتنعت برأي زميل فقلها صراحة.
+- لا تكرر ما قيل؛ أضف أو صحّح أو وافق باختصار.
+- كن مركّزاً: لا تتجاوز ما يلزم. إذا كانت المهمة برمجية فناقش البنية والقرارات واكتب مقتطفات قصيرة فقط عند الحاجة، لأن رئيس الجلسة سيكتب النسخة الكاملة النهائية.
+- إذا أرفق صاحب الطاولة صوراً أو فيديو أو ملفات فاعتمد عليها مباشرة في رأيك.
+- إذا وجّه صاحب الطاولة مداخلة فأعطها الأولوية.`;
+}
+function modSystem(){
+  return `أنت «${cfg.moderator.name}»، رئيس جلسة محايد يدير نقاشاً بين خبراء (${cfg.members.filter(m=>m.on).map(aliasOf).join('، ')}) نيابةً عن المستخدم. لا تنحاز لأي عضو، وتحكم على الأفكار بجودتها لا بقائلها. تكتب بالعربية. لا تذكر أسماء نماذج الذكاء الاصطناعي أو الشركات المطوّرة في أي رد، وأشر إلى الأعضاء بألقابهم فقط.\nدورك وطريقة عملك: ${cfg.moderator.role||''}`;
+}
+
+/* ---------- session flow ---------- */
+async function speak(m,r,snap,focus,sig,fix){
+  setSpeaking(m.id,true);
+  const e={type:'member',name:aliasOf(m),mid:m.id,model:m.model,color:m.color,round:r,content:''};
+  addEntry(e);
+  const user=fix
+    ?transcriptText()+`\n\n---\nالآن دورك يا «${aliasOf(m)}» في ${r}.\n⛔ رفض رئيس الجلسة الإجماع السابق لأنه خاطئ. الإجماع ليس دليلاً على الصحة، فلا تدافع عن الحل السابق لمجرد أن الجميع وافق عليه.\nالأخطاء التي وجدها: ${fix.issues}\nأعد التفكير من الصفر باتباع هذه الطريقة خطوة بخطوة:\n${fix.method}\nوضّح ما الخطأ في الحل السابق وما الحل الصحيح بعد تطبيق الطريقة. وإذا تأكدت بعد التطبيق أن جزءاً من الحل السابق صحيح فاذكره مع الدليل.`
+    :snap!=null
+    ?snap+'\n\n---\nهذه الجولة الأولى: قدّم رأيك وخطتك بشكل مستقل (لم ترَ آراء زملائك بعد). كن مركّزاً ومنظّماً.'
+    :transcriptText()+`\n\n---\nالآن دورك يا «${aliasOf(m)}» في الجولة ${r}.`+(focus?`\nطلب رئيس الجلسة التركيز على: ${focus}`:'')+
+     '\nرُد على زملائك بألقابهم: ما الذي توافق عليه، وما الذي تعترض عليه ولماذا، وما الإضافة التي تقرّبنا من إجابة واحدة مشتركة.';
+  try{
+    const out=await ask({model:m.model,system:memberSystem(m),user,maxTokens:cfg.maxTokens,effort:cfg.effort,onDelta:streamInto(e),signal:sig});
+    if(!out.trim()){e.content='_(لم يُرجع النموذج نصاً — جرّب رفع حد الرموز أو خفض مستوى التفكير من الإعدادات)_';e.failed=true;}
+  }catch(err){
+    if(err.name==='AbortError'){if(!e.content){e.content='_(أُوقف)_';e.failed=true;}refresh(e);throw err;}
+    e.content='⚠️ تعذّر الرد: '+err.message;e.failed=true;
+  }finally{refresh(e);setSpeaking(m.id,false);saveSession();}
+}
+async function moderatorCheck(r,sig){
+  setSpeaking('__mod',true);
+  try{
+    const out=await callModel({model:cfg.moderator.model,signal:sig,maxTokens:2000,effort:'low',messages:[
+      {role:'system',content:modSystem()},
+      {role:'user',content:transcriptText()+`\n\n---\nانتهت الجولة ${r}. قيّم مدى توافق الأعضاء على إجابة واحدة. أعد JSON فقط دون أي نص آخر بهذا الشكل:\n{"consensus": true أو false, "agreed": ["نقاط متفق عليها باختصار"], "open": ["نقاط ما زالت خلافية باختصار"], "next_focus": "ما يجب أن تركّز عليه الجولة القادمة لحسم الخلاف"}`}]});
+    const j=parseJSON(out);if(!j)return null;
+    let t=j.consensus?'**توافق مبدئي بين الأعضاء.**':'**لم يكتمل التوافق بعد.**';
+    if(Array.isArray(j.open)&&j.open.length)t+='\nنقاط مفتوحة: '+j.open.join('؛ ');
+    if(j.next_focus&&!j.consensus)t+='\nالتركيز في الجولة القادمة: '+j.next_focus;
+    addEntry({type:'note',content:t});return j;
+  }catch(err){if(err.name==='AbortError')throw err;addEntry({type:'error',content:'تعذّر تقييم رئيس الجلسة: '+err.message});return null;}
+  finally{setSpeaking('__mod',false);}
+}
+async function auditCheck(sig){
+  setSpeaking('__mod',true);
+  try{
+    const out=await ask({model:cfg.moderator.model,signal:sig,maxTokens:4000,effort:'medium',system:modSystem()+'\nأنت الآن في دور المدقق الصارم.',
+      user:transcriptText()+`\n\n---\nقبل كتابة الخلاصة: دقّق الحل الذي استقر عليه الأعضاء. تجاهل أنهم متفقون؛ الإجماع ليس دليلاً على الصحة، والنماذج قد تتفق على الخطأ نفسه.
+افحص: الأخطاء المنطقية والحسابية، المعلومات غير الصحيحة، الأخطاء التقنية أو البرمجية، مخالفة طلب صاحب الطاولة أو نوع المخرج (${OUT_LABEL[cur.outType||'auto']})، الافتراضات غير المبررة، والحلول التي تبدو صحيحة لكنها لا تعمل عملياً.
+لا ترفض لأسباب شكلية أو تفضيلات ذوقية؛ ارفض فقط إذا وجدت خطأً جوهرياً يغيّر النتيجة.
+أعد JSON فقط دون أي نص آخر:
+{"verdict": "sound" أو "flawed", "issues": ["الخطأ الجوهري باختصار"], "method": "الطريقة الصحيحة التي يجب أن يعتمدها الأعضاء، بخطوات مرقّمة"}`});
+    const j=parseJSON(out);if(!j)return null;
+    if(j.verdict==='flawed'){
+      const issues=(Array.isArray(j.issues)?j.issues:[String(j.issues||'')]).filter(Boolean).join('؛ ');
+      const method=Array.isArray(j.method)?j.method.join('\n'):String(j.method||'');
+      addEntry({type:'note',content:'⛔ **فلتر الإجماع: النتيجة مرفوضة.**\nالأخطاء: '+issues+'\n**الطريقة التي يجب أن يعتمدها الأعضاء:**\n'+method});
+      return {flawed:true,issues,method};
+    }
+    addEntry({type:'note',content:'🔎 **فلتر الإجماع:** دقّقت الحل ولم أجد خطأً جوهرياً.'});
+    return {flawed:false};
+  }catch(err){if(err.name==='AbortError')throw err;addEntry({type:'error',content:'تعذّر تدقيق الإجماع: '+err.message});return null;}
+  finally{setSpeaking('__mod',false);}
+}
+async function finalize(sig){
+  addEntry({type:'round',content:'الخلاصة'});
+  setSpeaking('__mod',true);
+  const e={type:'final',name:cfg.moderator.name,model:cfg.moderator.model,color:cfg.moderator.color,content:''};
+  const el=addEntry(e);
+  try{
+    await ask({model:cfg.moderator.model,signal:sig,maxTokens:(cur.outType==='flutter'?Math.max(cfg.finalMaxTokens,32000):cfg.finalMaxTokens),effort:cfg.finalEffort,onDelta:streamInto(e),system:modSystem(),
+      user:transcriptText()+`\n\n---\nاكتب الآن الإجابة النهائية الموحّدة باسم الطاولة كلها، مبنية على أفضل ما اتفق عليه الأعضاء، بهذا الهيكل:
+## الخلاصة
+(فقرة قصيرة)
+## الحل المتفق عليه
+(المحتوى الكامل القابل للاستخدام مباشرة، لا مجرد وصف)
+## نقاط الخلاف المتبقية
+(إن وُجدت: ما هي، ومن قالها، ولماذا رجّحت ما رجّحته. إن لم توجد فاذكر ذلك)
+## الخطوات التالية
+
+مهم: ${outRule()}
+إذا رفض رئيس الجلسة إجماعاً سابقاً وأدار جولة تصحيح، فابنِ الخلاصة على الطريقة المصحّحة ولا تعُد إلى الحل المرفوض، واذكر في "نقاط الخلاف المتبقية" أي خطأ لم يُحسم.`});
+    e.done=true;
+  }catch(err){
+    if(err.name==='AbortError'){e.done=true;refresh(e);throw err;}
+    e.content=(e.content?e.content+'\n\n':'')+'⚠️ تعذّرت كتابة الخلاصة: '+err.message;e.failed=true;
+  }finally{refresh(e);if(e.content)addFinalActions(el,e);setSpeaking('__mod',false);saveSession();}
+}
+async function runCycle(){
+  const active=cfg.members.filter(m=>m.on);
+  if(active.length<2){toast('فعّل عضوين على الأقل من الإعدادات');return;}
+  running=true;setUI();abortCtl=new AbortController();const sig=abortCtl.signal;const t0=Date.now();
+  const first=!entries.some(e=>e.type==='member');
+  let focus='';
+  try{
+    for(let r=1;r<=cfg.rounds;r++){
+      if(sig.aborted)throw abortErr();
+      const parallel=r===1&&first;
+      addEntry({type:'round',content:'الجولة '+r+(parallel?' — آراء مستقلة':' — نقاش')});
+      if(parallel){const snap=transcriptText();await Promise.all(active.map(m=>speak(m,r,snap,focus,sig)));}
+      else{for(const m of active){if(sig.aborted)throw abortErr();await speak(m,r,null,focus,sig);}}
+      if(r<cfg.rounds){
+        const v=await moderatorCheck(r,sig);
+        if(v){focus=v.next_focus||'';if(v.consensus&&cfg.autoStop&&r>=2){addEntry({type:'note',content:'✅ وصل الأعضاء إلى توافق كافٍ، ننتقل إلى الخلاصة.'});break;}}
+      }
+    }
+    if(cfg.auditOn){
+      for(let k=1;;k++){
+        if(sig.aborted)throw abortErr();
+        const a=await auditCheck(sig);
+        if(!a||!a.flawed)break;
+        if(k>cfg.auditRounds){addEntry({type:'note',content:'بلغنا أقصى عدد لجولات التصحيح؛ ستذكر الخلاصة الخطأ المتبقي بوضوح.'});break;}
+        const label='جولة التصحيح '+k;
+        addEntry({type:'round',content:label+' — بطريقة رئيس الجلسة'});
+        for(const m of active){if(sig.aborted)throw abortErr();await speak(m,label,null,'',sig,a);}
+      }
+    }
+    if(sig.aborted)throw abortErr();
+    await finalize(sig);
+  }catch(err){
+    addEntry({type:'error',content:err.name==='AbortError'?'تم إيقاف الجلسة. يمكنك إرسال رسالة لمتابعة النقاش.':'خطأ: '+err.message});
+  }finally{stats.ms+=Date.now()-t0;saveStats();running=false;speaking.clear();abortCtl=null;setUI();updateStatus();saveSession();}
+}
+function send(){
+  const inp=$('#input');let t=inp.value.trim();
+  if(pending.some(a=>a.kind==='busy')){toast('انتظر حتى تجهز الملفات المرفقة');return;}
+  const att=pending.slice();
+  if(!t&&!att.length)return;
+  if(!cfg.apiKey){openSettings();toast('أضف مفتاح OpenRouter أولاً');return;}
+  if(!t)t='أرفقت لكم ملفات، اطّلعوا عليها.';
+  inp.value='';autoGrow();pending=[];renderPending();
+  const ue={type:'user',name:'أنت',content:t};
+  if(att.length){ue.attachments=att;invalidateParts();}
+  if(running){ue.interject=true;addEntry(ue);toast('سيقرأ الأعضاء مداخلتك في دورهم القادم');return;}
+  addEntry(ue);
+  runCycle();
+}
+function setUI(){
+  $('#stopBtn').hidden=!running;
+  $('#sendBtn').textContent=running?'مداخلة':'إرسال';
+  $('#input').placeholder=running?'تدخّل في النقاش… (سيقرؤها الأعضاء)':(entries.length?'تابع مع الطاولة: اطلب تعديلاً أو اطرح سؤالاً جديداً…':'اكتب الموضوع أو المهمة للطاولة…');
+  updateStatus();renderProjects();
+}
+
+/* ---------- projects ---------- */
+function blankProject(name){return {id:'p'+Date.now()+Math.floor(Math.random()*1000),name,owner:account?account.id:null,entries:[],stats:newStats(),outType:'auto',updated:Date.now()};}
+function switchProject(id){
+  if(running){toast('أوقف النقاش أولاً');renderProjects();return;}
+  const p=projects.find(x=>x.id===id);if(!p)return;
+  cur=p;entries=cur.entries;stats=cur.stats=Object.assign(newStats(),cur.stats||{});
+  saveSession();renderAll();setUI();
+}
+function newProject(){
+  if(running){toast('أوقف النقاش أولاً');return;}
+  let name='مشروع '+(myProjects().length+1);
+  try{const n=prompt('اسم المشروع الجديد:',name);if(n===null)return;if(n.trim())name=n.trim();}catch(e){}
+  const p=blankProject(name);projects.push(p);switchProject(p.id);closeDrawer();toast('تم إنشاء المشروع: '+name);
+}
+function renameProject(p){
+  p=p||cur;
+  try{const n=prompt('اسم المشروع:',p.name);if(n&&n.trim()){p.name=n.trim();const u=p.updated;saveSession();p.updated=u;renderProjects();}}catch(e){toast('تعذّرت إعادة التسمية هنا');}
+}
+function deleteProject(p){
+  p=p||cur;
+  if(running&&p===cur){toast('أوقف النقاش أولاً');return;}
+  if(!confirm('حذف المشروع "'+p.name+'" ومحضره؟ لا يمكن التراجع. (نتائج المختبر لا تُحذف)'))return;
+  projects=projects.filter(x=>x!==p);
+  p.entries.forEach(e=>(e.attachments||[]).forEach(a=>{idbDel(a.id);fileCache.delete(a.id);}));
+  if(!myProjects().length)projects.push(blankProject('مشروع جديد'));
+  if(p===cur){
+    cur=[...myProjects()].sort((a,b)=>b.updated-a.updated)[0];entries=cur.entries;stats=cur.stats=Object.assign(newStats(),cur.stats||{});
+    saveSession();renderAll();setUI();
+  }else{saveSession();renderProjects();}
+  toast('تم حذف المشروع');
+}
+async function exportProject(p){
+  const files=[];
+  for(const e of p.entries)for(const a of (e.attachments||[])){const r=await getFile(a.id);if(r)files.push(r);}
+  const data={kind:'roundtable-project',version:2,exported:new Date().toISOString(),project:p,files};
+  download('مشروع-'+slugify(p.name)+'.json',JSON.stringify(data),'application/json');
+  toast('تم تصدير المشروع'+(files.length?' مع '+files.length+' مرفقات':'')+'. انقل الملف للجهاز الآخر واستورده هناك');
+}
+async function importProject(file){
+  try{
+    const j=JSON.parse(await file.text());
+    const src=j&&j.kind==='roundtable-project'?j.project:null;
+    if(!src||!Array.isArray(src.entries))throw new Error('الملف ليس مشروعاً من المختبر');
+    if(Array.isArray(j.files))for(const r of j.files){if(r&&r.id){await idbPut(r);fileCache.set(r.id,r);}}
+    let name=String(src.name||'مشروع مستورد');
+    if(myProjects().some(x=>x.name===name))name+=' (مستورد)';
+    const p={id:'p'+Date.now()+Math.floor(Math.random()*1000),name,owner:account?account.id:null,entries:src.entries,stats:Object.assign(newStats(),src.stats||{}),outType:src.outType||'auto',updated:Date.now()};
+    projects.push(p);invalidateParts();switchProject(p.id);closeDrawer();toast('تم استيراد المشروع: '+name);
+  }catch(err){toast('تعذّر الاستيراد: '+err.message);}
+}
+function renderProjects(){
+  const list=$('#projList');if(!list)return;
+  const q=($('#projSearch').value||'').trim().toLowerCase();
+  const items=[...myProjects()].sort((a,b)=>b.updated-a.updated).filter(p=>!q||p.name.toLowerCase().includes(q));
+  list.innerHTML='';
+  if(!items.length)list.innerHTML='<div class="sbempty">'+(q?'لا يوجد مشروع بهذا الاسم.':'لا توجد مشاريع بعد.')+'</div>';
+  items.forEach(p=>{
+    const n=p.entries.filter(e=>e.type==='member'||e.type==='final').length;
+    const done=p.entries.some(e=>e.type==='final'&&e.done&&!e.failed);
+    const row=document.createElement('div');row.className='pi'+(p===cur?' on':'');
+    row.innerHTML=`<button class="pmain" title="${esc(p.name)}"><b>${esc(p.name)}</b><small>${fmtDate(p.updated)} · ${n?n+' رد':'فارغ'}${done?' · ✓ خلاصة':''} · ${esc(OUT_LABEL[p.outType||'auto'])}</small></button><span class="pact"><button title="تصدير المشروع لنقله لجهاز آخر">⤓</button><button title="إعادة تسمية">✎</button><button title="حذف">🗑</button></span>`;
+    const [exp,ren,del]=row.querySelectorAll('.pact button');
+    row.querySelector('.pmain').onclick=()=>{if(p!==cur)switchProject(p.id);closeDrawer();};
+    exp.onclick=()=>exportProject(p);ren.onclick=()=>renameProject(p);del.onclick=()=>deleteProject(p);
+    list.appendChild(row);
+  });
+  $('#curProj').textContent=cur.name;$('#curProj').title=cur.name;
+  $('#outSel').value=cur.outType||'auto';
+  $('#outSel').disabled=$('#projNew').disabled=running;
+  $('#tableBtn').classList.toggle('live',running);
+}
+
+/* ---------- sidebar layout ---------- */
+const UI_DEFAULT_W=280;
+const ui=Object.assign({w:UI_DEFAULT_W,collapsed:false},store.get('rt_ui',{}));
+const isMobile=()=>window.matchMedia('(max-width:860px)').matches;
+function applyUI(save){
+  const m=$('.main');m.style.setProperty('--sw',ui.w+'px');m.classList.toggle('collapsed',!!ui.collapsed);
+  if(save!==false)store.set('rt_ui',ui);
+}
+function closeDrawer(){document.body.classList.remove('mopen');}
+function toggleSidebar(){
+  if(isMobile()){document.body.classList.toggle('mopen');return;}
+  if(ui.collapsed||ui.w<220){ui.collapsed=false;ui.w=Math.max(ui.w,UI_DEFAULT_W);}
+  else ui.collapsed=true;
+  applyUI();
+}
+(function initResizer(){
+  const r=$('#resizer');let drag=false;
+  r.addEventListener('pointerdown',e=>{drag=true;r.setPointerCapture(e.pointerId);r.classList.add('drag');document.body.classList.add('resizing');e.preventDefault();});
+  r.addEventListener('pointermove',e=>{
+    if(!drag)return;
+    const rect=$('.main').getBoundingClientRect();
+    const w=rect.right-e.clientX;
+    if(w<140){ui.collapsed=true;}else{ui.collapsed=false;ui.w=Math.round(Math.min(Math.max(w,180),Math.min(520,rect.width*0.5)));}
+    applyUI(false);
+  });
+  const end=()=>{if(!drag)return;drag=false;r.classList.remove('drag');document.body.classList.remove('resizing');if(ui.collapsed)ui.w=Math.max(ui.w,UI_DEFAULT_W);applyUI();};
+  r.addEventListener('pointerup',end);r.addEventListener('pointercancel',end);
+  r.addEventListener('dblclick',()=>{ui.w=UI_DEFAULT_W;ui.collapsed=false;applyUI();});
+})();
+
+/* ---------- settings ---------- */
+let draft=null;
+function memberCard(m,i){
+  const c=document.createElement('div');c.className='mcard';
+  c.innerHTML=`<input type="checkbox" ${m.on?'checked':''} title="مفعّل">
+  <input type="text" value="${esc(m.name)}" placeholder="اسم النموذج (للمالك)" title="اسم النموذج الحقيقي، يراه المالك فقط">
+  <input type="text" value="${esc(aliasOf(m))}" placeholder="اللقب الظاهر" title="اللقب الذي يظهر للمستخدم بدل اسم النموذج">
+  <input type="text" class="ltr mm" value="${esc(m.model)}" list="modelList" placeholder="provider/model">
+  <input type="color" value="${esc(m.color)}">
+  <button class="btn sm" type="button" title="حذف">✕</button>
+  <textarea placeholder="دور العضو وطريقة تفكيره">${esc(m.role)}</textarea>`;
+  const [on,name,al,model,color]=c.querySelectorAll('input');
+  on.onchange=()=>m.on=on.checked;name.oninput=()=>m.name=name.value;al.oninput=()=>m.alias=al.value.trim();model.oninput=()=>m.model=model.value.trim();
+  color.oninput=()=>m.color=color.value;c.querySelector('textarea').oninput=ev=>m.role=ev.target.value;
+  c.querySelector('button').onclick=()=>{draft.members.splice(i,1);renderMemberCards();};
+  return c;
+}
+function renderMemberCards(){const w=$('#sMembers');w.innerHTML='';draft.members.forEach((m,i)=>w.appendChild(memberCard(m,i)));}
+function openSettings(){
+  draft=JSON.parse(JSON.stringify(cfg));
+  $('#sKey').value=draft.apiKey;$('#sModName').value=draft.moderator.name;$('#sModModel').value=draft.moderator.model;$('#sModRole').value=draft.moderator.role||'';
+  $('#sRounds').value=draft.rounds;$('#sMax').value=draft.maxTokens;$('#sFinalMax').value=draft.finalMaxTokens;$('#sTemp').value=draft.temperature;
+  $('#sEffort').value=draft.effort;$('#sFinalEffort').value=draft.finalEffort;$('#sAuto').checked=draft.autoStop;draft.gh=Object.assign({token:'',repo:'',branch:''},draft.gh);$('#sGhRepo').value=draft.gh.repo;$('#sGhBranch').value=draft.gh.branch;$('#sGhToken').value=draft.gh.token;$('#sAudit').checked=draft.auditOn;$('#sAuditRounds').value=draft.auditRounds;
+  renderMemberCards();$('#settings').showModal();
+}
+function saveSettings(){
+  draft.apiKey=$('#sKey').value.trim();draft.moderator.name=$('#sModName').value.trim()||'رئيس الجلسة';draft.moderator.model=$('#sModModel').value.trim();draft.moderator.role=$('#sModRole').value.trim();
+  draft.rounds=Math.max(1,Math.min(8,+$('#sRounds').value||3));draft.maxTokens=+$('#sMax').value||3000;draft.finalMaxTokens=+$('#sFinalMax').value||16000;
+  draft.temperature=Math.max(0,Math.min(2,parseFloat($('#sTemp').value)));if(isNaN(draft.temperature))draft.temperature=0.7;
+  draft.effort=$('#sEffort').value;draft.finalEffort=$('#sFinalEffort').value;draft.autoStop=$('#sAuto').checked;draft.gh={repo:$('#sGhRepo').value.trim(),branch:$('#sGhBranch').value.trim(),token:$('#sGhToken').value.trim()};draft.auditOn=$('#sAudit').checked;draft.auditRounds=Math.max(1,Math.min(3,+$('#sAuditRounds').value||1));
+  draft.members=draft.members.filter(m=>m.name&&m.model);
+  cfg=draft;saveCfg();renderTable();$('#settings').close();toast('تم الحفظ');
+}
+function pickLatest(prefix,exclude){
+  const c=models.filter(m=>m.id.startsWith(prefix)&&!exclude.test(m.id)).sort((a,b)=>(b.created||0)-(a.created||0));
+  return c[0]&&c[0].id;
+}
+function autoPick(target){
+  if(!models.length){toast('لم تُحمّل قائمة النماذج بعد');return false;}
+  const ex=/(:|batch|mini|nano|lite|haiku|omni|banana|luna|image|audio|vision|embed|search|free|online|tts|realtime|instruct|guard|oss|codex|deep-research|chat)/i;
+  const map={claude:'anthropic/claude',gpt:'openai/gpt',gemini:'google/gemini',grok:'x-ai/grok',deepseek:'deepseek/deepseek'};
+  target.members.forEach(m=>{if(map[m.id]){const p=pickLatest(map[m.id],ex);if(p)m.model=p;}});
+  const c=target.members.find(m=>m.id==='claude');if(c)target.moderator.model=c.model;
+  return true;
+}
+async function loadModels(){
+  try{
+    const r=await fetch('https://openrouter.ai/api/v1/models');const j=await r.json();
+    models=(j.data||[]).map(m=>({id:m.id,name:m.name,created:m.created}));
+    $('#modelList').innerHTML=models.map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');
+    $('#modelsMsg').textContent='تم تحميل '+models.length+' نموذجاً.';
+    if(!cfg.autoPicked){if(autoPick(cfg)){cfg.autoPicked=true;saveCfg();renderTable();}}
+  }catch(e){$('#modelsMsg').textContent='تعذّر تحميل قائمة النماذج، يمكنك كتابة المعرّف يدوياً.';}
+}
+
+/* ---------- preview ---------- */
+let pvHTML='';
+function openPreview(html){pvHTML=html;$('#pvFrame').srcdoc=html;$('#preview').showModal();}
+
+/* ---------- export ---------- */
+function buildMD(){
+  const out=entries.map(e=>{
+    if(e.type==='round')return '\n---\n## '+e.content+'\n';
+    if(e.type==='error')return '> ⚠️ '+e.content;
+    if(e.type==='sys')return '> '+e.content.replace(/\n/g,'\n> ');
+    if(e.type==='note')return '> **'+cfg.moderator.name+':** '+e.content.replace(/\n/g,'\n> ');
+    return '### '+(e.type==='member'?dispName(e):e.name)+(e.model&&isOwner()?' ('+e.model+')':'')+'\n\n'+e.content;}).join('\n\n');
+  return '# محضر طاولة النماذج: '+cur.name+'\n\n'+out;
+}
+function exportMD(){
+  if(!entries.length){toast('لا يوجد محضر بعد');return;}
+  download('محضر-'+slugify(cur.name)+'.md',buildMD(),'text/markdown');
+}
+
+/* ---------- files, ZIP & GitHub ---------- */
+function slugify(n){return String(n||'project').trim().replace(/[\\/:*?"<>|#%{}^~\[\]`]+/g,'-').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')||'project';}
+function safePath(p){p=String(p||'').trim().replace(/^\.?\/+/,'');if(!p||p.split('/').some(x=>x==='..'||x===''))return null;return p;}
+function extractFiles(text){
+  const re=/(?:^|\n)[ \t>*#_-]*FILE:\s*`?([^\s`*]+)`?[^\n]*\n+[ \t]*```[^\n]*\n([\s\S]*?)\n[ \t]*```/g;
+  const out=new Map();let m;
+  while((m=re.exec(text||''))){const p=safePath(m[1]);if(p)out.set(p,m[2]+'\n');}
+  return [...out].map(([path,content])=>({path,content}));
+}
+let jszipP=null;
+function loadJSZip(){
+  if(window.JSZip)return Promise.resolve(window.JSZip);
+  if(!jszipP)jszipP=new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';sc.onload=()=>ok(window.JSZip);sc.onerror=()=>{jszipP=null;no(new Error('تعذّر تحميل مكتبة ZIP'));};document.head.appendChild(sc);});
+  return jszipP;
+}
+async function downloadZip(files){
+  try{
+    const Z=await loadJSZip();const z=new Z();const root=slugify(cur.name);
+    files.forEach(f=>z.file(root+'/'+f.path,f.content));
+    if(cur.outType==='flutter')z.file(root+'/.github/workflows/flutter-build.yml',WORKFLOW());
+    const blob=await z.generateAsync({type:'blob'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=root+'.zip';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+  }catch(err){toast(err.message);}
+}
+const WORKFLOW=()=>document.getElementById('wfYaml').textContent.replace(/^\n/,'');
+const b64=s=>btoa(unescape(encodeURIComponent(s)));
+function ghRepoPath(){
+  const r=(cfg.gh&&cfg.gh.repo||'').trim().replace(/^https?:\/\/github\.com\//,'').replace(/\.git$/,'').replace(/\/+$/,'');
+  if(!/^[\w.-]+\/[\w.-]+$/.test(r))throw new Error('اكتب اسم المستودع بالشكل username/repo في الإعدادات');
+  return '/repos/'+r;
+}
+async function gh(path,opt){
+  opt=opt||{};
+  if(!cfg.gh||!cfg.gh.token)throw new Error('أضف مفتاح GitHub من الإعدادات أولاً');
+  const res=await fetch('https://api.github.com'+path,Object.assign({},opt,{headers:Object.assign({'Authorization':'Bearer '+cfg.gh.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},opt.body?{'Content-Type':'application/json'}:{})}));
+  if(res.status===204)return null;
+  const j=await res.json().catch(()=>({}));
+  if(!res.ok){const er=new Error(res.status+': '+(j.message||'خطأ من GitHub'));er.status=res.status;throw er;}
+  return j;
+}
+async function ghCommit(files,message){
+  const R=ghRepoPath();const repo=await gh(R);
+  const br=(cfg.gh.branch||'').trim()||repo.default_branch||'main';
+  let ref;
+  try{ref=await gh(R+'/git/ref/heads/'+encodeURIComponent(br));}
+  catch(err){
+    if(err.status!==409&&err.status!==404)throw err;
+    await gh(R+'/contents/README.md',{method:'PUT',body:JSON.stringify({message:'Initial commit',content:b64('# '+repo.name+'\n\nمشروع من طاولة النماذج.\n'),branch:br})});
+    ref=await gh(R+'/git/ref/heads/'+encodeURIComponent(br));
+  }
+  const base=await gh(R+'/git/commits/'+ref.object.sha);
+  const tree=[];
+  for(const f of files){const bl=await gh(R+'/git/blobs',{method:'POST',body:JSON.stringify({content:f.content,encoding:'utf-8'})});tree.push({path:f.path,mode:'100644',type:'blob',sha:bl.sha});}
+  const t=await gh(R+'/git/trees',{method:'POST',body:JSON.stringify({base_tree:base.tree.sha,tree})});
+  const c=await gh(R+'/git/commits',{method:'POST',body:JSON.stringify({message,tree:t.sha,parents:[ref.object.sha]})});
+  await gh(R+'/git/refs/heads/'+encodeURIComponent(br),{method:'PATCH',body:JSON.stringify({sha:c.sha})});
+  return {commit:c,branch:br,repo};
+}
+async function ghSave(e,btn){
+  if(running){toast('انتظر حتى ينتهي النقاش');return;}
+  const slug=slugify(cur.name);
+  const files=extractFiles(e.content);
+  const isFlutter=files.some(f=>f.path==='pubspec.yaml'||f.path.startsWith('lib/'));
+  const out=[...files];
+  if(isFlutter)out.push({path:'.github/workflows/flutter-build.yml',content:WORKFLOW()});
+  const html=extractHTML(e.content);
+  if(html&&!files.length)out.push({path:'html/'+slug+'/index.html',content:html});
+  out.push({path:'docs/'+slug+'/المحضر.md',content:buildMD()});
+  const old=btn.textContent;btn.disabled=true;btn.textContent='⏳ جارٍ الحفظ…';
+  try{
+    const r=await ghCommit(out,'طاولة النماذج: '+cur.name+' ('+new Date().toISOString().slice(0,16).replace('T',' ')+')');
+    const rp=r.repo.full_name;
+    let msg='✅ **حُفظ في GitHub** (عدد الملفات: '+out.length+') في ['+rp+'@'+r.branch+']('+r.commit.html_url+').';
+    if(isFlutter)msg+='\nبدأ البناء الآلي في [Actions](https://github.com/'+rp+'/actions). بعد دقائق اضغط **🔄 حالة البناء**: عند النجاح تجد ملف APK في صفحة التشغيل، ونسخة ويب على https://'+rp.split('/')[0].toLowerCase()+'.github.io/'+rp.split('/')[1]+'/ إذا فعّلت GitHub Pages (المصدر: GitHub Actions).';
+    addEntry({type:'sys',content:msg});saveSession();toast('تم الحفظ في GitHub');
+  }catch(err){addEntry({type:'error',content:'تعذّر الحفظ في GitHub: '+err.message});}
+  finally{btn.disabled=false;btn.textContent=old;}
+}
+async function ghBuildStatus(btn){
+  const old=btn.textContent;btn.disabled=true;btn.textContent='⏳ جارٍ الفحص…';
+  try{
+    const R=ghRepoPath();
+    const runs=await gh(R+'/actions/runs?per_page=1');
+    const run=runs.workflow_runs&&runs.workflow_runs[0];
+    if(!run){addEntry({type:'sys',content:'لا يوجد أي تشغيل بناء بعد في المستودع.'});return;}
+    const st={queued:'في الانتظار',in_progress:'قيد التنفيذ',completed:'اكتمل'}[run.status]||run.status;
+    if(run.status!=='completed'){addEntry({type:'sys',content:'🔄 **حالة البناء:** '+st+'. [فتح التشغيل]('+run.html_url+')'});return;}
+    if(run.conclusion==='success'){addEntry({type:'sys',content:'✅ **نجح البناء.** حمّل ملف APK من قسم Artifacts في [صفحة التشغيل]('+run.html_url+').'});return;}
+    const jobs=await gh(R+'/actions/runs/'+run.id+'/jobs');
+    const errs=[];
+    for(const j of (jobs.jobs||[]).filter(j=>j.conclusion==='failure')){
+      const step=(j.steps||[]).find(x=>x.conclusion==='failure');
+      if(step)errs.push('فشلت خطوة: '+step.name);
+      try{const an=await gh(R+'/check-runs/'+j.id+'/annotations');an.filter(a=>a.annotation_level==='failure').forEach(a=>errs.push(a.message));}catch(_){}
+    }
+    const list=[...new Set(errs)].slice(0,30);
+    addEntry({type:'sys',content:'🛠 **فشل البناء** ('+run.conclusion+'). [فتح التشغيل]('+run.html_url+')\n'+list.map(x=>'- '+x).join('\n')});
+    if(list.length){$('#input').value='فشل بناء تطبيق Flutter في GitHub بهذه الأخطاء. ناقشوا السبب وأصلحوها، ثم أعيدوا كتابة الملفات المتأثرة كاملة:\n'+list.join('\n');autoGrow();toast('جهّزت الأخطاء في خانة الكتابة، أرسلها للطاولة');}
+  }catch(err){addEntry({type:'error',content:'تعذّر فحص البناء: '+err.message});}
+  finally{btn.disabled=false;btn.textContent=old;}
+}
+
+/* ---------- evaluation lab ---------- */
+const CRITERIA=['إجابات مستقلة في الجولة الأولى','اكتشاف الأخطاء','مناقشة نقاط الخلاف','تحسن الخلاصة النهائية','ملاءمة التكلفة والمدة','دقة المعلومات وخلوّها من الأخطاء','وضوح الخلاصة وسهولة استخدامها','الالتزام بالطلب ونوع المخرج','جودة التصميم أو الكود (إن وُجد)','فائدة فلتر الإجماع والتدقيق'];
+function newStats(){return {cost:0,ms:0,calls:0,tin:0,tout:0};}
+let stats=cur.stats||(cur.stats=newStats());
+let evals=store.get('rt_evals',[]);
+let labView='new',labSel=null;
+function saveStats(){saveSession();}
+function saveEvals(){store.set('rt_evals',evals);}
+function addUsage(u){if(!u)return;stats.calls++;stats.tin+=u.prompt_tokens||0;stats.tout+=u.completion_tokens||0;if(typeof u.cost==='number')stats.cost+=u.cost;saveStats();}
+const fmtCost=c=>'$'+(+c||0).toFixed(3);
+function fmtDur(ms){const s=Math.round((ms||0)/1000);const m=Math.floor(s/60);return m?m+' د '+(s%60)+' ث':s+' ث';}
+function fmtDate(d){try{return new Date(d).toLocaleString('ar',{calendar:'gregory',numberingSystem:'latn',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return d}}
+const scoreOf=e=>e.checks.filter(Boolean).length;
+const pctOf=e=>e.checks.length?scoreOf(e)/e.checks.length*100:0;
+const pillCls=p=>p>=80?'pill':p>=60?'pill mid':'pill low';
+const myEvals=()=>isOwner()?evals:evals.filter(e=>account&&e.acct===account.id);
+const USE_LABEL={yes:'نعم، كما هي',edit:'نعم، بعد تعديلات',no:'لا'};
+function sessionSnapshot(){
+  return {cost:stats.cost,ms:stats.ms,calls:stats.calls,tokens:stats.tin+stats.tout,
+    rounds:entries.filter(e=>e.type==='round'&&e.content!=='الخلاصة'&&!String(e.content).startsWith('جولة التصحيح')).length,
+    corrections:entries.filter(e=>e.type==='round'&&String(e.content).startsWith('جولة التصحيح')).length,
+    rejected:entries.some(e=>e.type==='note'&&String(e.content).includes('⛔')),project:cur.name,outType:cur.outType||'auto',
+    consensus:entries.some(e=>e.type==='note'&&e.content.includes('✅')),
+    hasFinal:entries.some(e=>e.type==='final'&&e.done&&!e.failed),
+    topic:(entries.find(e=>e.type==='user')||{}).content||'',
+    members:cfg.members.filter(m=>m.on).map(m=>({name:m.name,model:m.model})),moderator:cfg.moderator.model};
+}
+function snapHTML(st){
+  return `<div class="snap">
+    <div><small>التكلفة</small><b>${fmtCost(st.cost)}</b></div>
+    <div><small>المدة</small><b>${fmtDur(st.ms)}</b></div>
+    <div><small>الجولات</small><b>${st.rounds}</b></div>
+    <div><small>جولات التصحيح</small><b>${st.corrections||0}${st.rejected?' (رُفض إجماع)':''}</b></div>
+    <div><small>نوع المخرج</small><b>${esc(OUT_LABEL[st.outType]||'—')}</b></div>
+    <div><small>الطلبات / الرموز</small><b>${st.calls} / ${(st.tokens||0).toLocaleString('en')}</b></div>
+    <div><small>توافق مبكر</small><b>${st.consensus?'نعم':'لا'}</b></div>
+    <div><small>خلاصة مكتملة</small><b>${st.hasFinal?'نعم':'لا'}</b></div>
+  </div>
+  ${st.topic?`<div class="small" style="margin-top:10px"><b>الموضوع:</b> ${esc(st.topic.slice(0,220))}${st.topic.length>220?'…':''}</div>`:''}
+  <div class="small" data-owner style="margin-top:6px;direction:ltr;text-align:right">${st.members.map(m=>esc(m.name)+': '+esc(m.model)).join(' · ')} · ★ ${esc(st.moderator)}</div>`;
+}
+function openLab(view,id){labView=view||'new';labSel=id||null;renderLab();if(!$('#lab').open)$('#lab').showModal();}
+function renderLabList(){
+  const l=$('#labList');
+  const L=myEvals();
+  l.innerHTML=`<h4>التقييمات المحفوظة (${L.length})</h4>`+(L.length?'':'<div class="empty">لا توجد تقييمات بعد.<br>قيّم جلسة واحفظها لتظهر هنا.</div>');
+  [...L].reverse().forEach(e=>{
+    const b=document.createElement('button');b.className='ev'+(labView==='detail'&&labSel===e.id?' on':'');
+    const n=scoreOf(e);
+    b.innerHTML=`<div class="tx"><b>${esc(e.name)}</b><small>${fmtDate(e.date)} · ${fmtCost(e.stats.cost)}</small></div><span class="${pillCls(pctOf(e))}">${n}/${e.checks.length}</span>`;
+    b.onclick=()=>openLab('detail',e.id);l.appendChild(b);
+  });
+}
+function renderLab(){
+  renderLabList();
+  const m=$('#labMain');
+  const tabs=`<div class="tabs"><button class="btn sm tab${labView==='new'?' on':''}" data-v="new">＋ تقييم جديد</button><button class="btn sm tab${labView==='analysis'?' on':''}" data-v="analysis">📊 تحليل النتائج</button>${myEvals().length?'<button class="btn sm" id="csvBtn" style="margin-inline-start:auto">تصدير CSV</button>':''}</div>`;
+  if(labView==='new')m.innerHTML=tabs+newEvalHTML();
+  else if(labView==='analysis')m.innerHTML=tabs+analysisHTML();
+  else m.innerHTML=tabs+detailHTML();
+  m.scrollTop=0;
+  m.querySelectorAll('.tab').forEach(t=>t.onclick=()=>openLab(t.dataset.v));
+  const csv=m.querySelector('#csvBtn');if(csv)csv.onclick=exportCSV;
+  if(labView==='new')wireNewEval();
+  if(labView==='detail'){const d=m.querySelector('#delEval');if(d)d.onclick=()=>{if(!confirm('حذف هذه النتيجة؟'))return;evals=evals.filter(x=>x.id!==labSel);saveEvals();renderMini();openLab('analysis');};}
+}
+function newEvalHTML(){
+  const st=sessionSnapshot();
+  return `<div class="card"><h4>بيانات الجلسة الحالية (تُسجَّل تلقائياً)</h4>${entries.length?snapHTML(st):'<div class="empty">لا توجد جلسة حالية. شغّل نقاشاً أولاً ثم قيّمه هنا.</div>'}</div>
+  <div class="card"><h4>التقييم العام</h4>
+    <div class="stars" id="evStars">${[1,2,3,4,5].map(n=>`<button type="button" data-n="${n}" title="${n} من 5">★</button>`).join('')}</div>
+    <label class="f" style="margin-top:12px;max-width:280px">هل ستستخدم النتيجة؟<select id="evUse"><option value="">— اختر —</option><option value="yes">نعم، كما هي</option><option value="edit">نعم، بعد تعديلات</option><option value="no">لا</option></select></label>
+  </div>
+  <div class="card"><h4>معايير التقييم</h4>
+    <label class="f" style="margin-bottom:12px">تسمية التقييم<input type="text" id="evName" value="${esc(cur.name)}" placeholder="مثال: داشبورد مبيعات، 3 جولات"></label>
+    <div class="checks">${CRITERIA.map((c,i)=>`<label><input type="checkbox" data-i="${i}"> ${esc(c)}</label>`).join('')}</div>
+    <label class="f">ملاحظات (اختياري)<textarea id="evNote" rows="2" placeholder="ما الذي لاحظته في هذه الجلسة؟ ما الذي ينقص؟"></textarea></label>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:12px"><span>الدرجة: <b id="evScore">0/${CRITERIA.length}</b></span><button class="btn primary" id="evSave" style="margin-inline-start:auto">حفظ التقييم</button></div>
+  </div>`;
+}
+function wireNewEval(){
+  const boxes=[...document.querySelectorAll('#labMain .checks input')];
+  let stars=0;
+  const sb=[...document.querySelectorAll('#evStars button')];
+  const paint=()=>sb.forEach(b=>b.classList.toggle('on',+b.dataset.n<=stars));
+  sb.forEach(b=>b.onclick=()=>{stars=+b.dataset.n;paint();});
+  const upd=()=>$('#evScore').textContent=boxes.filter(b=>b.checked).length+'/'+CRITERIA.length;
+  boxes.forEach(b=>b.onchange=upd);
+  $('#evSave').onclick=()=>{
+    const name=$('#evName').value.trim();if(!name){toast('اكتب تسمية للتقييم');$('#evName').focus();return;}
+    if(!stars){toast('اختر التقييم العام بالنجوم');return;}
+    const e={id:Date.now(),name,date:new Date().toISOString(),acct:account?account.id:null,stars,use:$('#evUse').value,checks:boxes.map(b=>b.checked),note:$('#evNote').value.trim(),stats:sessionSnapshot()};
+    evals.push(e);saveEvals();toast('تم حفظ التقييم');openLab('analysis');
+  };
+}
+function starsTxt(n){return n?'★'.repeat(n)+'☆'.repeat(5-n):'—';}
+function detailHTML(){
+  const e=evals.find(x=>x.id===labSel);if(!e)return '<div class="empty">التقييم غير موجود.</div>';
+  const n=scoreOf(e);
+  return `<div class="card"><h4 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">${esc(e.name)} <span class="${pillCls(pctOf(e))}">${n}/${e.checks.length}</span><span style="color:#e0a800">${starsTxt(e.stars)}</span><span class="small" style="margin-inline-start:auto">${fmtDate(e.date)}</span></h4>
+    ${e.use?`<div class="small" style="margin-bottom:6px">استخدام النتيجة: <b>${esc(USE_LABEL[e.use]||e.use)}</b></div>`:''}
+    ${CRITERIA.slice(0,e.checks.length).map((c,i)=>`<div style="padding:4px 0;font-size:14px">${e.checks[i]?'<span class="ok">✓</span>':'<span class="bad">✕</span>'} ${esc(c)}</div>`).join('')}
+    ${e.note?`<div class="insight" style="margin:10px 0 0">${esc(e.note)}</div>`:''}</div>
+  <div class="card"><h4>بيانات الجلسة</h4>${snapHTML(e.stats)}</div>
+  <button class="btn danger sm" id="delEval">حذف التقييم</button>`;
+}
+function analysisHTML(){
+  const L=myEvals();
+  if(!L.length)return '<div class="empty">لا توجد تقييمات للتحليل بعد. احفظ أول تقييم من تبويب "تقييم جديد".</div>';
+  const N=L.length,avg=a=>a.reduce((x,y)=>x+y,0)/(a.length||1);
+  const avgP=avg(L.map(pctOf)),avgCost=avg(L.map(e=>e.stats.cost||0)),avgMs=avg(L.map(e=>e.stats.ms||0));
+  const starred=L.filter(e=>e.stars),avgStars=starred.length?avg(starred.map(e=>e.stars)):0;
+  const used=L.filter(e=>e.use),useYes=used.length?used.filter(e=>e.use!=='no').length/used.length:null;
+  const rates=CRITERIA.map((c,i)=>{const has=L.filter(e=>e.checks.length>i);return {c,n:has.length,r:has.length?has.filter(e=>e.checks[i]).length/has.length:0};}).filter(x=>x.n);
+  const sorted=[...rates].sort((a,b)=>a.r-b.r);
+  const best=[...L].sort((a,b)=>pctOf(b)-pctOf(a)||(b.stars||0)-(a.stars||0)||(a.stats.cost||0)-(b.stats.cost||0))[0];
+  const groups={};L.forEach(e=>{const k=e.stats.moderator||'—';(groups[k]=groups[k]||[]).push(e);});
+  const last=L.slice(-12);
+  return `<div class="kpis">
+    <div class="kpi"><small>عدد التقييمات</small><b>${N}</b></div>
+    <div class="kpi"><small>متوسط الدرجة</small><b>${Math.round(avgP)}%</b></div>
+    <div class="kpi"><small>التقييم العام</small><b>${avgStars?avgStars.toFixed(1)+' ★':'—'}</b></div>
+    <div class="kpi"><small>نتائج قابلة للاستخدام</small><b>${useYes==null?'—':Math.round(useYes*100)+'%'}</b></div>
+    <div class="kpi"><small>متوسط التكلفة</small><b>${fmtCost(avgCost)}</b></div>
+    <div class="kpi"><small>متوسط المدة</small><b>${fmtDur(avgMs)}</b></div>
+  </div>
+  <div class="insight">${N<3?'التقييمات قليلة؛ الأنماط تصبح أوضح بعد 3 تقييمات أو أكثر. ':''}أقوى معيار: <b>${esc(sorted.at(-1).c)}</b> (${Math.round(sorted.at(-1).r*100)}%) · أضعف معيار: <b>${esc(sorted[0].c)}</b> (${Math.round(sorted[0].r*100)}%) · أفضل جلسة: <b>${esc(best.name)}</b> (${Math.round(pctOf(best))}%${best.stars?' · '+best.stars+'★':''} بتكلفة ${fmtCost(best.stats.cost)})</div>
+  <div class="card"><h4>نسبة تحقق كل معيار</h4>${rates.map(x=>`<div class="hbar"><span>${esc(x.c)}</span><div class="tr"><div class="fl" style="width:${x.r*100}%"></div></div><span class="pc">${Math.round(x.r*100)}%</span></div>`).join('')}</div>
+  <div class="card"><h4>درجة كل جلسة${N>12?' (آخر 12)':''}</h4><div class="vbars">${last.map(e=>{const p=pctOf(e);return `<div class="vb" title="${esc(e.name)}"><span class="v">${Math.round(p)}%</span><div class="bar" style="height:${p/100*130}px;opacity:${p>=80?1:p>=60?.75:.5}"></div><span class="n">${esc(e.name)}</span><span>${e.stars?e.stars+'★ · ':''}${fmtCost(e.stats.cost)}</span></div>`}).join('')}</div></div>
+  <div class="card" data-owner><h4>المقارنة حسب نموذج رئيس الجلسة</h4><table class="tbl"><tr><th>النموذج</th><th>تقييمات</th><th>متوسط الدرجة</th><th>النجوم</th><th>متوسط التكلفة</th><th>متوسط المدة</th></tr>
+    ${Object.entries(groups).map(([k,g])=>{const gs=g.filter(e=>e.stars);return `<tr><td class="l">${esc(k)}</td><td>${g.length}</td><td>${Math.round(avg(g.map(pctOf)))}%</td><td>${gs.length?avg(gs.map(e=>e.stars)).toFixed(1):'—'}</td><td>${fmtCost(avg(g.map(e=>e.stats.cost||0)))}</td><td>${fmtDur(avg(g.map(e=>e.stats.ms||0)))}</td></tr>`;}).join('')}</table></div>`;
+}
+function renderMini(){
+  const w=$('#evalMini');if(!w)return;
+  if(!evals.length){w.innerHTML='<div class="small">لا توجد نتائج بعد. استخدم زر 🧪 مختبر التقييم بعد أي جلسة.</div>';return;}
+  w.innerHTML='';[...evals].reverse().slice(0,6).forEach(e=>{
+    const n=scoreOf(e);const b=document.createElement('button');b.className='ev';
+    b.innerHTML=`<div class="tx"><b>${esc(e.name)}</b><small>${fmtDate(e.date)} · ${fmtCost(e.stats.cost)}</small></div><span class="${pillCls(pctOf(e))}">${n}/${e.checks.length}</span>`;
+    b.onclick=()=>openLab('detail',e.id);w.appendChild(b);});
+}
+function exportCSV(){
+  const head=['التسمية','التاريخ','النجوم','استخدام النتيجة',...CRITERIA,'الدرجة %','التكلفة $','المدة (ث)','الجولات','رئيس الجلسة','ملاحظات'];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=myEvals().map(e=>[e.name,e.date,e.stars||'',USE_LABEL[e.use]||'',...CRITERIA.map((c,i)=>i<e.checks.length?(e.checks[i]?1:0):''),Math.round(pctOf(e)),(e.stats.cost||0).toFixed(4),Math.round((e.stats.ms||0)/1000),e.stats.rounds,isOwner()?e.stats.moderator:'',e.note].map(q).join(','));
+  download('نتائج-التقييم.csv','﻿'+[head.map(q).join(','),...rows].join('\n'),'text/csv');
+}
+
+/* ---------- attachments ---------- */
+const TEXT_EXT=/\.(txt|md|markdown|csv|tsv|json|jsonl|xml|yaml|yml|html?|css|scss|js|mjs|cjs|jsx|ts|tsx|py|dart|java|kt|kts|swift|c|h|cpp|hpp|cc|cs|go|rs|php|rb|sql|sh|bash|ps1|bat|ini|toml|env|gradle|properties|vue|svelte|r|lua|pl|log)$/i;
+let idbP=null;
+function idb(){if(!idbP)idbP=new Promise((ok,no)=>{const r=indexedDB.open('rt_files',1);r.onupgradeneeded=()=>r.result.createObjectStore('files',{keyPath:'id'});r.onsuccess=()=>ok(r.result);r.onerror=()=>{idbP=null;no(r.error);};});return idbP;}
+async function idbPut(rec){const db=await idb();return new Promise((ok,no)=>{const t=db.transaction('files','readwrite');t.objectStore('files').put(rec);t.oncomplete=()=>ok();t.onerror=()=>no(t.error);});}
+async function idbGet(id){const db=await idb();return new Promise((ok,no)=>{const r=db.transaction('files').objectStore('files').get(id);r.onsuccess=()=>ok(r.result||null);r.onerror=()=>no(r.error);});}
+async function idbDel(id){try{const db=await idb();db.transaction('files','readwrite').objectStore('files').delete(id);}catch(e){}}
+const fileCache=new Map();
+async function getFile(id){if(fileCache.has(id))return fileCache.get(id);let r=null;try{r=await idbGet(id);}catch(e){}if(r)fileCache.set(id,r);return r;}
+let pending=[];
+const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+' م.ب':Math.max(1,Math.round((b||0)/1024))+' ك.ب';
+const KIND_ICON={image:'🖼',video:'🎬',pdf:'📄',text:'📃',sheet:'📊'};
+function readAs(file,how){return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>no(r.error||new Error('تعذّرت قراءة الملف'));r[how](file);});}
+function loadImg(src){return new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error('تعذّرت قراءة الصورة'));i.src=src;});}
+function toJpeg(src,max,q){
+  const w=src.naturalWidth||src.videoWidth||1,h=src.naturalHeight||src.videoHeight||1;
+  const k=Math.min(1,max/Math.max(w,h));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(src,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q||0.85);
+}
+async function videoFrames(file,n){
+  const url=URL.createObjectURL(file);const v=document.createElement('video');v.muted=true;v.preload='auto';v.playsInline=true;v.src=url;
+  try{
+    await new Promise((ok,no)=>{v.onloadeddata=ok;v.onerror=()=>no(new Error('صيغة الفيديو غير مدعومة في هذا المتصفح، جرّب MP4'));setTimeout(()=>no(new Error('انتهت مهلة قراءة الفيديو')),25000);});
+    const d=isFinite(v.duration)?v.duration:0;const frames=[];
+    for(let i=0;i<n;i++){
+      const t=d?d*(i+0.5)/n:0;
+      await new Promise(ok=>{const h=()=>{v.removeEventListener('seeked',h);ok();};v.addEventListener('seeked',h);try{v.currentTime=Math.max(0,Math.min(t,d-0.05));}catch(e){ok();}setTimeout(ok,4000);});
+      frames.push({t:Math.round(t),data:toJpeg(v,1024,0.8)});
+    }
+    return {duration:Math.round(d),frames};
+  }finally{URL.revokeObjectURL(url);}
+}
+let xlsxP=null;
+function loadXLSX(){if(window.XLSX)return Promise.resolve(window.XLSX);if(!xlsxP)xlsxP=new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';sc.onload=()=>ok(window.XLSX);sc.onerror=()=>{xlsxP=null;no(new Error('تعذّر تحميل قارئ ملفات Excel، تأكد من الاتصال'));};document.head.appendChild(sc);});return xlsxP;}
+const MAX_TEXT=300000;
+const cutText=t=>t.length>MAX_TEXT?t.slice(0,MAX_TEXT)+'\n…(اقتُطع الباقي لكبر حجم الملف)':t;
+async function processFile(file){
+  const id='f'+Date.now()+Math.random().toString(36).slice(2,8);
+  const name=file.name||'ملف',type=file.type||'',size=file.size||0;
+  let rec;
+  if(type.startsWith('image/')){
+    if(size>30*1048576)throw new Error('الصورة أكبر من 30 م.ب');
+    const img=await loadImg(await readAs(file,'readAsDataURL'));
+    rec={id,name,kind:'image',size,data:toJpeg(img,1568,0.85),thumb:toJpeg(img,160,0.7)};
+  }else if(type.startsWith('video/')){
+    if(size>500*1048576)throw new Error('الفيديو أكبر من 500 م.ب');
+    const vf=await videoFrames(file,6);
+    let thumb='';if(vf.frames[0]){thumb=toJpeg(await loadImg(vf.frames[0].data),160,0.7);}
+    rec={id,name,kind:'video',size,duration:vf.duration,frames:vf.frames,thumb};
+  }else if(type==='application/pdf'||/\.pdf$/i.test(name)){
+    if(size>20*1048576)throw new Error('ملف PDF أكبر من 20 م.ب');
+    rec={id,name,kind:'pdf',size,data:await readAs(file,'readAsDataURL')};
+  }else if(/\.(xlsx|xlsm|xls|ods)$/i.test(name)){
+    const X=await loadXLSX();const wb=X.read(await file.arrayBuffer(),{type:'array'});
+    rec={id,name,kind:'sheet',size,text:cutText(wb.SheetNames.map(sh=>'## ورقة: '+sh+'\n'+X.utils.sheet_to_csv(wb.Sheets[sh])).join('\n\n'))};
+  }else if(type.startsWith('text/')||/json|xml|javascript|yaml|csv/.test(type)||TEXT_EXT.test(name)){
+    rec={id,name,kind:'text',size,text:cutText(await readAs(file,'readAsText'))};
+  }else throw new Error('صيغة «'+name+'» غير مدعومة حالياً. المدعوم: الصور، الفيديو، PDF، Excel وCSV، والملفات النصية والبرمجية. حوّل ملفات Word وPowerPoint إلى PDF.');
+  await idbPut(rec);fileCache.set(id,rec);
+  return {id,name,kind:rec.kind,size,thumb:rec.thumb||''};
+}
+async function addFiles(list){
+  for(const f of list){
+    if(pending.length>=10){toast('الحد الأقصى 10 ملفات في الرسالة الواحدة');break;}
+    const tmp={id:'tmp'+Math.random().toString(36).slice(2),name:f.name,kind:'busy',size:f.size};
+    pending.push(tmp);renderPending();
+    try{const meta=await processFile(f);const i=pending.indexOf(tmp);if(i>=0)pending[i]=meta;}
+    catch(err){pending=pending.filter(x=>x!==tmp);toast(err.message||'تعذّر تجهيز الملف');}
+    renderPending();
+  }
+}
+function chipHTML(a,removable){
+  const ic=a.thumb?`<img src="${esc(a.thumb)}" alt="">`:`<span>${a.kind==='busy'?'⏳':(KIND_ICON[a.kind]||'📎')}</span>`;
+  return `<span class="achip${a.kind==='image'?' img':''}${a.kind==='busy'?' busy':''}" data-id="${esc(a.id)}" title="${esc(a.name)}">${ic}<span class="an">${esc(a.name)}</span><small>${a.kind==='busy'?'جارٍ التجهيز…':fmtSize(a.size)}</small>${removable&&a.kind!=='busy'?'<button type="button" title="إزالة">✕</button>':''}</span>`;
+}
+function renderPending(){
+  const w=$('#pending');w.innerHTML=pending.map(a=>chipHTML(a,true)).join('');
+  w.querySelectorAll('.achip button').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const id=b.closest('.achip').dataset.id;pending=pending.filter(x=>x.id!==id);idbDel(id);fileCache.delete(id);renderPending();});
+  w.querySelectorAll('.achip.img').forEach(c=>c.onclick=()=>viewImage(c.dataset.id));
+}
+async function viewImage(id){
+  const r=await getFile(id);if(!r||!r.data){toast('الملف غير متوفر على هذا الجهاز');return;}
+  openPreview('<!doctype html><body style="margin:0;background:#111;display:grid;place-items:center;min-height:100vh"><img src="'+r.data+'" style="max-width:100%;max-height:100vh">');
+}
+let partsCache=null;
+function invalidateParts(){partsCache=null;}
+async function attachmentParts(){
+  if(partsCache&&partsCache.pid===cur.id&&partsCache.n===entries.length)return partsCache.parts;
+  const metas=[];entries.forEach(e=>{if(e.type==='user'&&Array.isArray(e.attachments))e.attachments.forEach(a=>metas.push(a));});
+  const parts=[],recs=[],missing=[];
+  for(const a of metas){const r=await getFile(a.id);if(r)recs.push(r);else missing.push(a.name);}
+  const tb=recs.filter(r=>r.kind==='text'||r.kind==='sheet').map(r=>'📎 ملف مرفق: '+r.name+'\n```\n'+r.text+'\n```');
+  if(tb.length)parts.push({type:'text',text:'الملفات المرفقة من صاحب الطاولة:\n\n'+tb.join('\n\n')});
+  let budget=12;
+  for(const r of [...recs].reverse()){
+    if(r.kind==='image'&&budget>0){parts.push({type:'text',text:'🖼 صورة مرفقة: '+r.name});parts.push({type:'image_url',image_url:{url:r.data}});budget--;}
+    else if(r.kind==='video'&&budget>0){const fr=r.frames.slice(0,budget);parts.push({type:'text',text:'🎬 فيديو مرفق: '+r.name+' (مدته '+r.duration+' ثانية). هذه '+fr.length+' لقطات منه موزعة على مدته بالترتيب:'});fr.forEach(f=>{parts.push({type:'text',text:'لقطة عند الثانية '+f.t});parts.push({type:'image_url',image_url:{url:f.data}});});budget-=fr.length;}
+    else if(r.kind==='pdf'){parts.push({type:'text',text:'📄 ملف PDF مرفق: '+r.name});parts.push({type:'file',file:{filename:r.name,file_data:r.data}});}
+  }
+  if(missing.length)parts.push({type:'text',text:'(ملاحظة: بعض المرفقات غير متوفرة على هذا الجهاز: '+missing.join('، ')+')'});
+  partsCache={pid:cur.id,n:entries.length,parts};
+  return parts;
+}
+async function ask({model,system,user,maxTokens,effort,onDelta,signal}){
+  const parts=await attachmentParts();
+  const msgs=c=>[{role:'system',content:system},{role:'user',content:c}];
+  if(!parts.length)return callModel({model,messages:msgs(user),maxTokens,effort,onDelta,signal});
+  try{return await callModel({model,messages:msgs([...parts,{type:'text',text:user}]),maxTokens,effort,onDelta,signal});}
+  catch(err){
+    if(err.name==='AbortError'||!/^4\d\d/.test(err.message||''))throw err;
+    const t=parts.filter(p=>p.type==='text');
+    t.push({type:'text',text:'(ملاحظة: يوجد مرفقات مرئية لم تستطع قراءتها مباشرة؛ اعتمد على ما يذكره زملاؤك عنها.)'});
+    return callModel({model,messages:msgs([...t,{type:'text',text:user}]),maxTokens,effort,onDelta,signal});
+  }
+}
+
+/* ---------- accounts & greeting ---------- */
+let greetState={active:false,dismissed:false,text:''};
+function saveAccounts(){store.set('rt_accounts',accounts);store.set('rt_account',account?account.id:'');}
+function greetEl(){
+  const g=document.createElement('div');g.className='greet';g.id='greetCard';
+  g.innerHTML=`<div class="av">★</div><div class="gb"><div class="gn">${esc(cfg.moderator.name)}</div><div class="body md">${greetState.text?md(greetState.text):'<span class="typing"><i></i><i></i><i></i></span>'}</div></div><button class="gx" type="button" title="إخفاء">✕</button>`;
+  g.querySelector('.gx').onclick=()=>{greetState.dismissed=true;g.remove();};
+  return g;
+}
+function renderAcct(){
+  if(!account)return;
+  $('#acctAv').textContent=initial(account.name);$('#acctName').textContent=account.name;
+  document.body.classList.toggle('owner',isOwner());
+}
+function enterAccount(a){
+  account=a;a.visits=(a.visits||0)+1;a.lastSeen=Date.now();
+  if(a.role==='owner')projects.forEach(p=>{if(!p.owner)p.owner=a.id;});
+  let mine=myProjects();
+  if(!mine.length){const b=blankProject(a.role==='owner'?'المشروع الأول':'مشروعي الأول');projects.push(b);mine=[b];}
+  cur=mine.find(p=>p.id===a.lastProject)||[...mine].sort((x,y)=>y.updated-x.updated)[0];
+  entries=cur.entries;stats=cur.stats=Object.assign(newStats(),cur.stats||{});invalidateParts();
+  saveAccounts();saveSession();renderAcct();
+  $('#auth').hidden=true;
+  greetState={active:true,dismissed:false,text:''};
+  renderAll();setUI();greetUser();
+  if(!cfg.apiKey)setTimeout(()=>{if(!$('#settings').open)openSettings();},700);
+}
+function showAuth(){
+  if(running){toast('أوقف النقاش أولاً');return;}
+  account=null;saveAccounts();document.body.classList.remove('owner');
+  const list=$('#authList');list.innerHTML='';
+  $('#authExisting').hidden=!accounts.length;
+  accounts.forEach(a=>{const b=document.createElement('button');b.type='button';b.className='acct';
+    b.innerHTML=`<span class="aav">${esc(initial(a.name))}</span><span style="min-width:0"><b>${esc(a.name)}</b>${a.role==='owner'?' <small class="small">· المالك</small>':''}<br><small class="small ltr" style="display:inline-block">${esc(a.email)} · ${esc(a.id)}</small></span>`;
+    b.onclick=()=>enterAccount(a);list.appendChild(b);});
+  $('#authName').value='';$('#authEmail').value='';$('#authErr').textContent='';
+  $('#auth').hidden=false;setTimeout(()=>$('#authName').focus(),60);
+}
+function createAccount(){
+  const name=$('#authName').value.trim(),email=$('#authEmail').value.trim().toLowerCase();
+  const err=t=>{$('#authErr').textContent=t;};
+  if(name.length<2)return err('اكتب اسمك');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))return err('اكتب بريداً إلكترونياً صحيحاً');
+  if(accounts.some(a=>a.email===email))return err('هذا البريد مسجّل مسبقاً، اختره من القائمة بالأعلى');
+  let id;do{id='LAB-'+Math.floor(100000+Math.random()*900000);}while(accounts.some(a=>a.id===id));
+  const owner=!accounts.length;
+  const a={id,name,email,role:owner?'owner':'user',plan:owner?'المالك':'تجربة',created:Date.now(),visits:0,lastSeen:Date.now()};
+  accounts.push(a);enterAccount(a);toast('أهلاً '+name+'! رقم حسابك '+id);
+}
+function openAcct(){
+  if(!account)return;
+  const n=myProjects().filter(p=>p.entries.length).length;
+  $('#acctBody').innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px"><span class="aav" style="width:46px;height:46px;font-size:20px">${esc(initial(account.name))}</span><div><b style="font-size:17px">${esc(account.name)}</b><div class="small">${account.role==='owner'?'مالك المنصة':'مستخدم'}</div></div></div>
+  <div class="kv"><small>رقم الحساب</small><b class="ltr" style="text-align:right">${esc(account.id)}</b><small>البريد</small><span class="ltr" style="text-align:right">${esc(account.email)}</span><small>الباقة</small><span>${esc(account.plan||'تجربة')}</span><small>تاريخ التسجيل</small><span>${fmtDate(account.created)}</span><small>عدد الزيارات</small><span>${account.visits||0}</span><small>المشاريع</small><span>${n}</span></div>`;
+  $('#acctDlg').showModal();
+}
+async function greetUser(){
+  if(!account)return;
+  const me=account;
+  const set=t=>{if(account!==me)return;greetState.text=t;const b=document.querySelector('#greetCard .body');if(b)b.innerHTML=md(t);};
+  const used=myProjects().filter(p=>p.entries.some(e=>e.type==='user'));
+  const first=!used.length;
+  const fallback=first?`أهلاً بك يا ${me.name} في **المختبر** 🌟 هنا يجتمع خمسة خبراء من الذكاء الاصطناعي على طاولة واحدة، يتناقشون ويدقّقون بعضهم حتى يقدّموا لك إجابة واحدة متفقاً عليها. اطرح أول فكرة لديك الآن وشاهدهم يعملون.`:`أهلاً بعودتك يا ${me.name}! مشاريعك بانتظارك، والطاولة جاهزة لما تريد إكماله.`;
+  if(!cfg.apiKey){set(fallback);return;}
+  const facts=['الاسم: '+me.name,'نوع الحساب: '+(me.role==='owner'?'مالك المنصة نفسه':'مستخدم — باقته الحالية: '+(me.plan||'تجربة')),'عدد مرات الدخول: '+me.visits,'تاريخ التسجيل: '+new Date(me.created).toISOString().slice(0,10),'عدد المشاريع التي عمل عليها: '+used.length];
+  [...used].sort((a,b)=>b.updated-a.updated).slice(0,5).forEach(p=>{const t=(p.entries.find(e=>e.type==='user')||{}).content||'';const done=p.entries.some(e=>e.type==='final'&&e.done&&!e.failed);facts.push(`- مشروع «${p.name}» (${OUT_LABEL[p.outType||'auto']}، ${done?'اكتملت خلاصته':'لم يكتمل بعد'}، آخر نشاط ${new Date(p.updated).toISOString().slice(0,10)}): ${t.slice(0,160)}`);});
+  const ev=evals.filter(e=>e.acct===me.id);if(ev.length)facts.push('متوسط تقييمه للجلسات: '+Math.round(ev.reduce((s,e)=>s+pctOf(e),0)/ev.length)+'%');
+  const task=first
+    ?'هذه أول زيارة له. اكتب ترحيباً حاراً ومحفّزاً بقوة في 3 إلى 4 جمل: رحّب به باسمه، واشرح في جملة واحدة ما يميز المختبر (خمسة خبراء ذكاء اصطناعي يتناقشون ويدققون بعضهم حتى يتفقوا على إجابة واحدة موثوقة، والنتيجة قد تكون صفحة أو تطبيقاً أو تحليلاً جاهزاً)، ثم اقترح عليه فكرة أولى مغرية يجربها الآن، واختم بجملة تشوّقه إلى أن الباقة العليا تفتح له القوة الكاملة للمختبر، بأسلوب راقٍ غير مُلحّ.'
+    :'هذه زيارة متكررة. اكتب ترحيباً شخصياً قصيراً في جملتين إلى ثلاث: رحّب به باسمه بعودته، واذكر آخر مشروع له بالاسم بطريقة تدل أنك تتذكر عمله، واقترح خطوة تالية محددة ومفيدة لهذا المشروع أو فكرة مرتبطة باهتماماته.'+(me.role==='owner'?'':' إذا كان على باقة التجربة فأضف تلميحاً لطيفاً لمزايا الباقة العليا.');
+  try{
+    const out=await callModel({model:cfg.moderator.model,maxTokens:1500,effort:'off',noTrack:true,onDelta:set,messages:[
+      {role:'system',content:`أنت «${cfg.moderator.name}» في منصة «المختبر»: منصة تجمع خبراء ذكاء اصطناعي على طاولة واحدة يتناقشون حتى يتفقوا على إجابة موحّدة. تكتب بالعربية الفصحى السهلة بأسلوب راقٍ ودافئ. لا تذكر أسماء أي نماذج ذكاء اصطناعي أو شركات مطوّرة. بدون عناوين أو قوائم: فقرة واحدة فقط، ورمز تعبيري واحد على الأكثر.`},
+      {role:'user',content:'معلومات المستخدم:\n'+facts.join('\n')+'\n\n'+task}]});
+    if(!out.trim())set(fallback);
+  }catch(e){set(fallback);}
+}
+
+/* ---------- wiring ---------- */
+$('#labBtn').onclick=()=>openLab('new');
+$('#attachBtn').onclick=()=>{$('#attachInput').value='';$('#attachInput').click();};
+$('#attachInput').onchange=e=>{const f=[...(e.target.files||[])];if(f.length)addFiles(f);};
+(function(){const comp=$('.composer');
+  ['dragenter','dragover'].forEach(ev=>comp.addEventListener(ev,e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();comp.classList.add('drag');}}));
+  comp.addEventListener('dragleave',e=>{if(!comp.contains(e.relatedTarget))comp.classList.remove('drag');});
+  comp.addEventListener('drop',e=>{comp.classList.remove('drag');if(e.dataTransfer&&e.dataTransfer.files.length){e.preventDefault();addFiles([...e.dataTransfer.files]);}});
+})();
+$('#input').addEventListener('paste',e=>{const fs=[...((e.clipboardData&&e.clipboardData.files)||[])];if(fs.length){e.preventDefault();addFiles(fs);}});
+$('#authCreate').onclick=createAccount;
+['#authName','#authEmail'].forEach(q=>$(q).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();createAccount();}}));
+$('#acctBtn').onclick=openAcct;
+$('#acctSwitch').onclick=()=>{if(running){toast('أوقف النقاش أولاً');return;}$('#acctDlg').close();showAuth();};
+function autoGrow(){const t=$('#input');t.style.height='auto';t.style.height=Math.min(180,t.scrollHeight)+'px';}
+$('#input').addEventListener('input',autoGrow);
+$('#input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send();}});
+$('#sendBtn').onclick=send;
+$('#stopBtn').onclick=()=>abortCtl&&abortCtl.abort();
+$('#settingsBtn').onclick=openSettings;
+$('#saveSettings').onclick=saveSettings;
+$('#exportBtn').onclick=exportMD;
+$('#newBtn').onclick=newProject;
+$('#projNew').onclick=newProject;
+$('#projSearch').oninput=renderProjects;
+$('#projImport').onclick=()=>{if(running){toast('أوقف النقاش أولاً');return;}$('#projFile').value='';$('#projFile').click();};
+$('#projFile').onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)importProject(f);};
+$('#sbToggle').onclick=toggleSidebar;
+$('#sbClose').onclick=()=>{if(isMobile())closeDrawer();else{ui.collapsed=true;applyUI();}};
+$('#scrim').onclick=closeDrawer;
+$('#tableBtn').onclick=()=>{renderTable();$('#tableDlg').showModal();};
+$('#tblSettings').onclick=()=>{$('#tableDlg').close();openSettings();};
+$('#outSel').onchange=e=>{cur.outType=e.target.value;saveSession();toast('نوع المخرج: '+OUT_LABEL[cur.outType]);};
+$('#addMember').onclick=()=>{if(draft.members.length>=6){toast('الحد الأقصى 6 أعضاء');return;}draft.members.push({id:'m'+Date.now(),name:'عضو جديد',alias:'الخبير',icon:'◆',model:'',color:'#8b5cf6',on:true,role:'وصف دوره وطريقة تفكيره'});renderMemberCards();};
+$('#recPick').onclick=()=>{applyRecommended(draft);renderMemberCards();$('#sModModel').value=draft.moderator.model;$('#sMax').value=draft.maxTokens;toast('تم تطبيق النماذج الموصى بها، اضغط حفظ');};
+$('#autoPick').onclick=()=>{if(autoPick(draft)){renderMemberCards();$('#sModModel').value=draft.moderator.model;toast('تم اختيار أحدث النماذج، راجعها ثم احفظ');}};
+$('#showKey').onclick=()=>{const k=$('#sKey');k.type=k.type==='password'?'text':'password';$('#showKey').textContent=k.type==='password'?'إظهار':'إخفاء';};
+$('#testKey').onclick=async()=>{
+  const k=$('#sKey').value.trim();const msg=$('#keyMsg');if(!k){msg.innerHTML='<span class="bad">أدخل المفتاح أولاً.</span>';return;}
+  msg.textContent='جارٍ الاختبار…';
+  try{const r=await fetch('https://openrouter.ai/api/v1/key',{headers:{Authorization:'Bearer '+k}});const j=await r.json();
+    if(!r.ok)throw new Error((j.error&&j.error.message)||r.status);
+    const d=j.data||{};msg.innerHTML='<span class="ok">✓ المفتاح صالح.</span> الاستهلاك: $'+(+d.usage||0).toFixed(2)+(d.limit!=null?' من حد $'+d.limit:'');
+  }catch(e){msg.innerHTML='<span class="bad">✕ فشل الاختبار: '+esc(e.message)+'</span>';}
+};
+$('#testGh').onclick=async()=>{
+  const msg=$('#ghMsg');const saved=cfg.gh;
+  cfg.gh={repo:$('#sGhRepo').value.trim(),branch:$('#sGhBranch').value.trim(),token:$('#sGhToken').value.trim()};
+  msg.textContent='جارٍ الاختبار…';
+  try{const r=await gh(ghRepoPath());const pm=r.permissions||{};
+    msg.innerHTML=(pm.push?'<span class="ok">✓ متصل بالمستودع '+esc(r.full_name)+' مع صلاحية الكتابة.</span>':'<span class="bad">✕ متصل لكن بدون صلاحية كتابة (Contents: Read and write).</span>')+' الفرع الافتراضي: '+esc(r.default_branch||'—');
+  }catch(e){msg.innerHTML='<span class="bad">✕ '+esc(e.message)+'</span>';}
+  finally{cfg.gh=saved;}
+};
+$('#pvDownload').onclick=()=>download('dashboard.html',pvHTML,'text/html');
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+
+applyUI(false);loadModels();
+if(account)enterAccount(account);else showAuth();
+</script>
+</body>
+</html>
