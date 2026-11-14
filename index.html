@@ -16,16 +16,16 @@
   --table:#efe9dc;--table-edge:#d9cfb8;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#131312;--panel:#1c1b19;--panel-2:#22211e;--ink:#ecebe5;--muted:#a09e95;--line:#2f2e2a;
-  --accent:#2dd4bf;--accent-ink:#04201c;--accent-soft:#123632;--danger:#f97066;--danger-soft:#3a1714;
-  --note:#2b2614;--note-line:#5c4f1d;--shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.3);
-  --table:#2a2720;--table-edge:#3d382d;
+  --bg:#0f1c2e;--panel:#162740;--panel-2:#1d314e;--ink:#eef3fa;--muted:#a9bad3;--line:#2c4466;
+  --accent:#3fd5c0;--accent-ink:#06231f;--accent-soft:#17414a;--danger:#ff8a80;--danger-soft:#43222a;
+  --note:#2a2f3d;--note-line:#8a7432;--shadow:0 1px 2px rgba(3,10,25,.35),0 6px 20px rgba(3,10,25,.35);
+  --table:#233a5c;--table-edge:#3a5680;
 }}
 :root[data-theme="dark"]{
-  --bg:#131312;--panel:#1c1b19;--panel-2:#22211e;--ink:#ecebe5;--muted:#a09e95;--line:#2f2e2a;
-  --accent:#2dd4bf;--accent-ink:#04201c;--accent-soft:#123632;--danger:#f97066;--danger-soft:#3a1714;
-  --note:#2b2614;--note-line:#5c4f1d;--shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.3);
-  --table:#2a2720;--table-edge:#3d382d;
+  --bg:#0f1c2e;--panel:#162740;--panel-2:#1d314e;--ink:#eef3fa;--muted:#a9bad3;--line:#2c4466;
+  --accent:#3fd5c0;--accent-ink:#06231f;--accent-soft:#17414a;--danger:#ff8a80;--danger-soft:#43222a;
+  --note:#2a2f3d;--note-line:#8a7432;--shadow:0 1px 2px rgba(3,10,25,.35),0 6px 20px rgba(3,10,25,.35);
+  --table:#233a5c;--table-edge:#3a5680;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -290,6 +290,7 @@ body:not(.owner) [data-owner]{display:none!important}
       <button class="btn" id="labBtn" title="تقييم الجلسات">⭐ <span class="t">التقييم</span></button>
       <button class="btn" id="exportBtn" title="تصدير المحضر كنص للقراءة (.md) — لا يُستورد">⤓ <span class="t">المحضر</span></button>
       <button class="btn" id="helpBtn" title="دليل الأيقونات">؟</button>
+      <button class="btn" id="themeBtn" title="الوضع الليلي / النهاري">🌙</button>
       <button class="btn" id="newBtn" title="مشروع جديد">＋ <span class="t">مشروع جديد</span></button>
       <button class="btn" id="settingsBtn">⚙ <span class="t">الإعدادات</span></button>
       <button class="btn" id="acctBtn" title="حسابي"><span class="aav" id="acctAv">؟</span><span class="t" id="acctName"></span></button>
@@ -531,6 +532,9 @@ jobs:
 
 <script>
 const $=s=>document.querySelector(s);
+function currentTheme(){const t=document.documentElement.dataset.theme;if(t)return t;return window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+function applyTheme(t){document.documentElement.dataset.theme=t;const b=document.getElementById('themeBtn');if(b){b.textContent=t==='dark'?'☀️':'🌙';b.title=t==='dark'?'الوضع النهاري':'الوضع الليلي';}}
+(function(){let t=null;try{t=JSON.parse(localStorage.getItem('rt_theme')||'null');}catch(e){}if(t)document.documentElement.dataset.theme=t;})();
 const store={
   get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
@@ -631,7 +635,7 @@ function renderEntry(e){
   if(e.type==='sys'){d.className='note';d.innerHTML='<span class="md">'+md(e.content)+'</span>';return d;}
   if(e.type==='note'){d.className='note';d.innerHTML='<b>'+esc(cfg.moderator.name)+':</b> <span class="md">'+md(e.content)+'</span>';return d;}
   d.className='msg '+e.type;
-  const color=e.type==='user'?'var(--ink)':(e.color||'var(--accent)');
+  const color=e.type==='user'?'#334155':(e.color||'var(--accent)');
   const mem=e.type==='member'?memberOfEntry(e):null;
   const avTxt=e.type==='user'?'أ':(e.type==='final'?'★':(mem&&mem.icon)||initial(dispName(e)));
   d.innerHTML=`<div class="av" style="background:${esc(color)}">${esc(avTxt)}</div>
@@ -736,10 +740,10 @@ async function callModel({model,messages,maxTokens,effort,reasoningMax,onDelta,o
 const OUT_LABEL={auto:'تلقائي',web:'صفحة إلكترونية',app:'تطبيق ويب',flutter:'تطبيق Flutter',text:'نصوص وتحليل'};
 function outRule(){
   const t=cur.outType||'auto';
-  const html='ملف HTML كاملاً واحداً قائماً بذاته داخل كتلة ```html ... ``` يعمل مباشرة في المتصفح (CSS وJS بداخله، ويمكنه تحميل مكتبات من cdnjs أو jsdelivr)، باتجاه RTL وبالعربية، بمحتوى أو بيانات تجريبية واقعية إن لم يقدّم المستخدم بيانات، وتصميم احترافي متجاوب مع الجوال';
+  const html='ملف HTML كاملاً واحداً قائماً بذاته داخل كتلة ```html ... ``` يعمل مباشرة في المتصفح (CSS وJS بداخله، ويمكنه تحميل مكتبات من cdnjs أو jsdelivr)، بلغة صاحب الطاولة واتجاهها (RTL إذا كانت عربية)، بمحتوى أو بيانات تجريبية واقعية إن لم يقدّم المستخدم بيانات، وتصميم احترافي متجاوب مع الجوال';
   if(t==='web')return 'نوع المخرج المطلوب: صفحة إلكترونية. يجب أن يتضمن "الحل المتفق عليه" '+html+'. اجعلها صفحة متكاملة بأقسام واضحة تناسب المشروع (مثل الواجهة الرئيسية، المزايا، التفاصيل، الدعوة لاتخاذ إجراء، التذييل).';
   if(t==='app')return 'نوع المخرج المطلوب: تطبيق ويب. يجب أن يتضمن "الحل المتفق عليه" '+html+'. اجعله تطبيقاً تفاعلياً يعمل فعلاً: شاشات متعددة مع تنقّل، نماذج إدخال تعمل، حفظ البيانات في localStorage داخل try/catch، وتصميم بأسلوب تطبيقات الجوال.';
-  if(t==='flutter')return 'نوع المخرج المطلوب: تطبيق Flutter. اكتب مشروع Flutter كاملاً قابلاً للبناء (Dart 3، Material 3، null safety)، يشمل pubspec.yaml وكل ملفات lib/ (الشاشات، الويدجتس، النماذج، إدارة الحالة). صمّم واجهات التطبيق كاملة وبشكل احترافي، بالعربية واتجاه RTL (flutter_localizations مع locale ar). استخدم أقل عدد ممكن من الحزم الخارجية ومن الحزم المعروفة فقط. لا تكتب مجلدات المنصات (android وios وweb) لأنها تُولَّد آلياً عند البناء. مهم جداً: اكتب كل ملف في كتلة كود مستقلة، وقبلها مباشرة سطر بهذا الشكل بالضبط: FILE: المسار (مثل FILE: lib/main.dart). اكتب كل ملف كاملاً ولا تضع "..." بدل الكود.';
+  if(t==='flutter')return 'نوع المخرج المطلوب: تطبيق Flutter. اكتب مشروع Flutter كاملاً قابلاً للبناء (Dart 3، Material 3، null safety)، يشمل pubspec.yaml وكل ملفات lib/ (الشاشات، الويدجتس، النماذج، إدارة الحالة). صمّم واجهات التطبيق كاملة وبشكل احترافي، بلغة صاحب الطاولة واتجاهها (للعربية: RTL مع flutter_localizations وlocale ar). استخدم أقل عدد ممكن من الحزم الخارجية ومن الحزم المعروفة فقط. لا تكتب مجلدات المنصات (android وios وweb) لأنها تُولَّد آلياً عند البناء. مهم جداً: اكتب كل ملف في كتلة كود مستقلة، وقبلها مباشرة سطر بهذا الشكل بالضبط: FILE: المسار (مثل FILE: lib/main.dart). اكتب كل ملف كاملاً ولا تضع "..." بدل الكود.';
   if(t==='text')return 'نوع المخرج المطلوب: نصوص وتحليل فقط. لا تكتب أي كود HTML أو برمجة. قدّم تحليلاً مكتوباً منظماً بعناوين وجداول Markdown وخطوات عملية.';
   return 'نوع المخرج: تحدده أنت حسب الطلب. إذا كانت المهمة تطلب واجهة أو داشبورد أو صفحة أو أداة أو تطبيقاً، فضمّن داخل "الحل المتفق عليه" '+html+'. وإلا فقدّم تحليلاً مكتوباً منظماً.';
 }
@@ -755,7 +759,7 @@ function memberSystem(m){
 دورك على الطاولة: ${m.role}
 نوع المخرج الذي يريده صاحب الطاولة في النهاية: ${OUT_LABEL[cur.outType||'auto']}.
 قواعد الطاولة:
-- تكلّم بالعربية بأسلوب حواري طبيعي، وخاطب زملاءك بألقابهم المذكورة فقط.
+- تكلّم بنفس لغة صاحب الطاولة في طلبه (أو باللغة التي طلبها صراحة)، بأسلوب حواري طبيعي، وخاطب زملاءك بألقابهم المذكورة فقط.
 - هويتك على الطاولة هي لقبك فقط: لا تذكر اسمك كنموذج ذكاء اصطناعي ولا الشركة التي طوّرتك، ولا تخمّن هوية زملائك.
 - الهدف إجابة واحدة مشتركة متفق عليها، لا الفوز بالنقاش. إذا اقتنعت برأي زميل فقلها صراحة.
 - لا تكرر ما قيل؛ أضف أو صحّح أو وافق باختصار.
@@ -764,7 +768,7 @@ function memberSystem(m){
 - إذا وجّه صاحب الطاولة مداخلة فأعطها الأولوية.`;
 }
 function modSystem(){
-  return `أنت «${cfg.moderator.name}»، رئيس جلسة محايد يدير نقاشاً بين خبراء (${cfg.members.filter(m=>m.on).map(aliasOf).join('، ')}) نيابةً عن المستخدم. لا تنحاز لأي عضو، وتحكم على الأفكار بجودتها لا بقائلها. تكتب بالعربية. لا تذكر أسماء نماذج الذكاء الاصطناعي أو الشركات المطوّرة في أي رد، وأشر إلى الأعضاء بألقابهم فقط.\nدورك وطريقة عملك: ${cfg.moderator.role||''}`;
+  return `أنت «${cfg.moderator.name}»، رئيس جلسة محايد يدير نقاشاً بين خبراء (${cfg.members.filter(m=>m.on).map(aliasOf).join('، ')}) نيابةً عن المستخدم. لا تنحاز لأي عضو، وتحكم على الأفكار بجودتها لا بقائلها. تكتب بنفس لغة صاحب الطاولة في طلبه، أو باللغة التي طلبها صراحة. لا تذكر أسماء نماذج الذكاء الاصطناعي أو الشركات المطوّرة في أي رد، وأشر إلى الأعضاء بألقابهم فقط.\nدورك وطريقة عملك: ${cfg.moderator.role||''}`;
 }
 
 /* ---------- session flow ---------- */
@@ -1502,6 +1506,7 @@ const GUIDE=[
   ['＋','إرفاق ملفات','بجانب خانة الكتابة: صور، فيديو، PDF، Excel، ملفات برمجية. لا تستخدمه لملفات المشاريع.'],
   ['⤓','المحضر','أعلى الصفحة: نسخة نصية من النقاش للقراءة (‎.md‎)، ولا تُستورد كمشروع.'],
   ['⭐','التقييم','تقييم الجلسات وتحليل النتائج.'],
+  ['🌙','الوضع الليلي','التبديل بين الوضع الليلي والنهاري، ويُحفظ اختيارك.'],
   ['👥','الطاولة','أعضاء الطاولة ونماذجهم (للمالك فقط).',true],
   ['⚙','الإعدادات','مفتاح OpenRouter، وGitHub، وعدد الجولات.'],
   ['A','حسابي','الحرف الأول من اسمك: بيانات الحساب وتبديله.'],
@@ -1593,6 +1598,8 @@ async function greetUser(){
 
 /* ---------- wiring ---------- */
 $('#labBtn').onclick=()=>openLab('new');
+$('#themeBtn').onclick=()=>{const t=currentTheme()==='dark'?'light':'dark';applyTheme(t);store.set('rt_theme',t);};
+applyTheme(currentTheme());
 $('#helpBtn').onclick=()=>{$('#helpBody').innerHTML=guideHTML();$('#helpDlg').showModal();};
 $('#resumeBtn').onclick=resumeFinal;
 $('#attachBtn').onclick=()=>{$('#attachInput').value='';$('#attachInput').click();};
