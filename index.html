@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes">
 <title>المختبر</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -33,7 +33,9 @@ html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,sans-serif;font-size:15px;line-height:1.7}
 button{font:inherit;cursor:pointer}
 input,textarea,select{font:inherit;color:var(--ink)}
-.app{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh}
+:root{--z:1}
+.app{display:grid;grid-template-rows:auto 1fr;height:calc(100vh / var(--z));height:calc(100dvh / var(--z));zoom:var(--z)}
+dialog,#auth .authcard,#toast{zoom:var(--z)}
 header{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
 header h1{font-size:17px;margin:0;font-weight:700;display:flex;align-items:center;gap:8px}
 .logo{width:28px;height:28px;border-radius:50%;background:var(--table);border:2px solid var(--table-edge);display:grid;place-items:center;font-size:14px}
@@ -91,7 +93,10 @@ body.resizing{cursor:col-resize;user-select:none}
 .rm p{margin:2px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
 .rm.off{opacity:.45}
 .chatcol{display:grid;grid-template-rows:1fr auto;min-height:0;min-width:0}
-#feed{overflow:auto;padding:22px 22px 10px;display:flex;flex-direction:column;gap:14px}
+#feed{overflow:auto;padding:22px max(22px,calc((100% - 960px) / 2)) 10px;display:flex;flex-direction:column;gap:14px}
+#feed>*{max-width:none}
+.msg,.divider,.note,.err,.greet{max-width:none!important}
+.msg.user{max-width:80%!important}
 .welcome{max-width:640px;margin:6vh auto;text-align:center}
 .welcome h2{font-size:24px;margin:0 0 6px}
 .welcome p{color:var(--muted);margin:0 0 18px}
@@ -133,9 +138,16 @@ body.resizing{cursor:col-resize;user-select:none}
 .typing{display:inline-flex;gap:4px;padding:6px 0}
 .typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:pulse 1s infinite}
 .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
-.composer{border-top:1px solid var(--line);background:var(--panel);padding:12px 18px}
+.composer{border-top:1px solid var(--line);background:var(--panel);padding:12px 18px;position:relative}
+#compResizer{position:absolute;top:-5px;left:0;right:0;height:10px;cursor:row-resize;touch-action:none;z-index:2}
+#compResizer::after{content:"";position:absolute;left:50%;top:3px;width:46px;height:4px;margin-left:-23px;border-radius:4px;background:var(--line);transition:background .15s}
+#compResizer:hover::after,#compResizer.drag::after{background:var(--accent)}
+#fsDlg{width:min(320px,calc(100vw - 24px))}
+.fsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fsgrid button{border:1px solid var(--line);background:var(--panel-2);color:var(--ink);border-radius:10px;padding:10px 0;font-weight:600}
+.fsgrid button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .cbox{display:flex;gap:8px;align-items:flex-end;max-width:960px;margin:0 auto}
-.cbox textarea{flex:1;resize:none;min-height:46px;max-height:180px;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;outline:none}
+.cbox textarea{flex:1;resize:none;min-height:46px;max-height:var(--cmax,180px);border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;outline:none}
 .cbox textarea:focus{border-color:var(--accent)}
 .toolbar{display:flex;gap:6px;align-items:center;max-width:960px;margin:0 auto 8px;flex-wrap:wrap;font-size:13px}
 .toolbar select{border:1px solid var(--line);background:var(--panel-2);border-radius:8px;padding:4px 8px;max-width:220px;min-width:0}
@@ -291,6 +303,7 @@ body:not(.owner) [data-owner]{display:none!important}
       <button class="btn" id="exportBtn" title="تصدير المحضر كنص للقراءة (.md) — لا يُستورد">⤓ <span class="t">المحضر</span></button>
       <button class="btn" id="helpBtn" title="دليل الأيقونات">؟</button>
       <button class="btn" id="themeBtn" title="الوضع الليلي / النهاري">🌙</button>
+      <button class="btn" id="fsBtn" title="حجم الخط">Aa</button>
       <button class="btn" id="newBtn" title="مشروع جديد">＋ <span class="t">مشروع جديد</span></button>
       <button class="btn" id="settingsBtn">⚙ <span class="t">الإعدادات</span></button>
       <button class="btn" id="acctBtn" title="حسابي"><span class="aav" id="acctAv">؟</span><span class="t" id="acctName"></span></button>
@@ -306,6 +319,7 @@ body:not(.owner) [data-owner]{display:none!important}
     <div class="chatcol">
       <div id="feed"></div>
       <div class="composer">
+        <div id="compResizer" title="اسحب لتكبير منطقة الكتابة أو تصغيرها · نقرتان للحجم الافتراضي"></div>
         <div class="toolbar">
           <span class="small">المشروع:</span><span class="curproj" id="curProj"></span>
           <span class="sp"></span>
@@ -426,6 +440,10 @@ body:not(.owner) [data-owner]{display:none!important}
     <p class="small">الحسابات حالياً محفوظة على هذا الجهاز فقط، وستنتقل إلى خادم المنصة عند الإطلاق.</p>
   </div>
 </div>
+<dialog id="fsDlg">
+  <div class="dhead"><h3>حجم الخط</h3><button class="btn sm" data-close>✕</button></div>
+  <div class="dbody"><div class="fsgrid" id="fsGrid"></div><div class="small">يتغير حجم النصوص والقوائم والكتابة في الصفحة كلها. الافتراضي 15.</div></div>
+</dialog>
 <dialog id="helpDlg">
   <div class="dhead"><h3>دليل الأيقونات</h3><button class="btn sm" data-close>✕</button></div>
   <div class="dbody" id="helpBody"></div>
@@ -1047,7 +1065,8 @@ function toggleSidebar(){
   r.addEventListener('pointermove',e=>{
     if(!drag)return;
     const rect=$('.main').getBoundingClientRect();
-    const w=rect.right-e.clientX;
+    const zf=rect.width/($('.main').offsetWidth||rect.width)||1;
+    const w=(rect.right-e.clientX)/zf;
     if(w<140){ui.collapsed=true;}else{ui.collapsed=false;ui.w=Math.round(Math.min(Math.max(w,180),Math.min(520,rect.width*0.5)));}
     applyUI(false);
   });
@@ -1507,6 +1526,8 @@ const GUIDE=[
   ['⤓','المحضر','أعلى الصفحة: نسخة نصية من النقاش للقراءة (‎.md‎)، ولا تُستورد كمشروع.'],
   ['⭐','التقييم','تقييم الجلسات وتحليل النتائج.'],
   ['🌙','الوضع الليلي','التبديل بين الوضع الليلي والنهاري، ويُحفظ اختيارك.'],
+  ['Aa','حجم الخط','اختيار حجم النصوص من 10 إلى 18، ويتغير حجم الصفحة كلها.'],
+  ['═','حجم منطقة الكتابة','اسحب الخط الصغير أعلى منطقة الكتابة للأعلى أو للأسفل.'],
   ['👥','الطاولة','أعضاء الطاولة ونماذجهم (للمالك فقط).',true],
   ['⚙','الإعدادات','مفتاح OpenRouter، وGitHub، وعدد الجولات.'],
   ['A','حسابي','الحرف الأول من اسمك: بيانات الحساب وتبديله.'],
@@ -1543,7 +1564,7 @@ function enterAccount(a){
   $('#auth').hidden=true;
   greetState={active:true,dismissed:false,text:''};
   renderAll();setUI();greetUser();
-  if(!cfg.apiKey)setTimeout(()=>{if(!$('#settings').open)openSettings();},700);
+  if(!cfg.apiKey)setTimeout(()=>{if(account===a&&$('#auth').hidden&&!$('#settings').open)openSettings();},700);
 }
 function showAuth(){
   if(running){toast('أوقف النقاش أولاً');return;}
@@ -1598,6 +1619,17 @@ async function greetUser(){
 
 /* ---------- wiring ---------- */
 $('#labBtn').onclick=()=>openLab('new');
+$('#fsBtn').onclick=()=>{let cur=15;try{cur=JSON.parse(localStorage.getItem('rt_fs')||'15');}catch(e){}
+  const g=$('#fsGrid');g.innerHTML='';for(let n=18;n>=10;n--){const b=document.createElement('button');b.type='button';b.textContent=n;if(n===+cur)b.className='on';b.onclick=()=>{applyFs(n);try{localStorage.setItem('rt_fs',JSON.stringify(n));}catch(e){}g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));};g.appendChild(b);}
+  $('#fsDlg').showModal();};
+(function(){const h=$('#compResizer');let drag=false,y0=0,h0=0;
+  h.addEventListener('pointerdown',e=>{drag=true;y0=e.clientY;h0=$('#input').offsetHeight;h.setPointerCapture(e.pointerId);h.classList.add('drag');e.preventDefault();});
+  h.addEventListener('pointermove',e=>{if(!drag)return;const z=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--z'))||1;setComposerH(h0+(y0-e.clientY)/z,false);});
+  const end=()=>{if(!drag)return;drag=false;h.classList.remove('drag');setComposerH(+$('#input').dataset.min||46);};
+  h.addEventListener('pointerup',end);h.addEventListener('pointercancel',end);
+  h.addEventListener('dblclick',()=>setComposerH(46));
+  let ch=46;try{ch=JSON.parse(localStorage.getItem('rt_ch')||'46');}catch(e){}setComposerH(ch,false);
+})();
 $('#themeBtn').onclick=()=>{const t=currentTheme()==='dark'?'light':'dark';applyTheme(t);store.set('rt_theme',t);};
 applyTheme(currentTheme());
 $('#helpBtn').onclick=()=>{$('#helpBody').innerHTML=guideHTML();$('#helpDlg').showModal();};
@@ -1614,7 +1646,10 @@ $('#authCreate').onclick=createAccount;
 ['#authName','#authEmail'].forEach(q=>$(q).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();createAccount();}}));
 $('#acctBtn').onclick=openAcct;
 $('#acctSwitch').onclick=()=>{if(running){toast('أوقف النقاش أولاً');return;}$('#acctDlg').close();showAuth();};
-function autoGrow(){const t=$('#input');t.style.height='auto';t.style.height=Math.min(180,t.scrollHeight)+'px';}
+function autoGrow(){const t=$('#input');const mn=+(t.dataset.min||46),mx=Math.max(180,mn);t.style.height='auto';t.style.height=Math.max(mn,Math.min(mx,t.scrollHeight))+'px';}
+function setComposerH(h,save){const t=$('#input');h=Math.round(Math.max(46,Math.min(h,window.innerHeight*0.55)));t.dataset.min=h;document.documentElement.style.setProperty('--cmax',Math.max(180,h)+'px');autoGrow();if(save!==false){try{localStorage.setItem('rt_ch',JSON.stringify(h));}catch(e){}}}
+function applyFs(n){n=Math.max(10,Math.min(18,+n||15));document.documentElement.style.setProperty('--z',(n/15).toFixed(4));const b=document.getElementById('fsBtn');if(b)b.title='حجم الخط: '+n;return n;}
+(function(){let n=15;try{n=JSON.parse(localStorage.getItem('rt_fs')||'15');}catch(e){}applyFs(n);})();
 $('#input').addEventListener('input',autoGrow);
 $('#input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send();}});
 $('#sendBtn').onclick=send;
