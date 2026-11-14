@@ -651,6 +651,7 @@ const thinkMap=new WeakMap();
 function bodyHTML(e){
   if(e.content)return md(e.content)+(e.type==='final'&&!e.done&&!e.failed&&!running?'<p><em>⏸ انقطعت كتابة الخلاصة هنا. استخدم زر «أكمل إلى الخلاصة» بالأسفل.</em></p>':'');
   if(e.type==='final'&&!e.done&&!running)return '<em>⏸ انقطعت كتابة الخلاصة قبل أن تبدأ. استخدم زر «أكمل إلى الخلاصة» بالأسفل.</em>';
+  if(e.type==='final'&&e.done&&!running)return '<em>'+EMPTY_FINAL+'</em>';
   const n=thinkMap.get(e);
   return '<span class="typing"><i></i><i></i><i></i></span>'+(n?'<span class="think">🧠 يفكّر الآن… ('+n.toLocaleString('en')+' حرفاً من التفكير)</span>':'');
 }
@@ -703,10 +704,10 @@ function welcome(){
 }
 
 /* ---------- OpenRouter ---------- */
-async function callModel({model,messages,maxTokens,effort,onDelta,onReason,signal,noTrack}){
+async function callModel({model,messages,maxTokens,effort,reasoningMax,onDelta,onReason,signal,noTrack}){
   let rlen=0;
   const body={model,messages,max_tokens:maxTokens,temperature:cfg.temperature,stream:true};
-  if(effort&&effort!=='off')body.reasoning={effort};
+  if(effort&&effort!=='off')body.reasoning=reasoningMax?{max_tokens:reasoningMax}:{effort};
   body.usage={include:true};
   const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal,
     headers:{'Authorization':'Bearer '+cfg.apiKey,'Content-Type':'application/json','X-Title':'AI Round Table'},body:JSON.stringify(body)});
@@ -821,6 +822,8 @@ async function auditCheck(sig){
   finally{setSpeaking('__mod',false);}
 }
 const finalMax=()=>cur.outType==='flutter'?Math.max(cfg.finalMaxTokens,32000):cfg.finalMaxTokens;
+const finalThink=()=>Math.max(1024,Math.min(8000,Math.floor(finalMax()/4)));
+const EMPTY_FINAL='⚠️ انتهى رد رئيس الجلسة بدون أي نص (غالباً استهلك التفكير كل الحد المسموح). اضغط «↻ أكمل إلى الخلاصة» بالأسفل لإعادة المحاولة.';
 function finalPrompt(){
   return `اكتب الآن الإجابة النهائية الموحّدة باسم الطاولة كلها، مبنية على أفضل ما اتفق عليه الأعضاء، بهذا الهيكل:
 ## الخلاصة
@@ -841,9 +844,9 @@ async function finalize(sig){
   const e={type:'final',name:cfg.moderator.name,model:cfg.moderator.model,color:cfg.moderator.color,content:''};
   const el=addEntry(e);
   try{
-    await ask({model:cfg.moderator.model,signal:sig,maxTokens:finalMax(),effort:cfg.finalEffort,onDelta:streamInto(e),onReason:thinkInto(e),system:modSystem(),
+    const out=await ask({model:cfg.moderator.model,signal:sig,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:streamInto(e),onReason:thinkInto(e),system:modSystem(),
       user:transcriptText()+'\n\n---\n'+finalPrompt()});
-    e.done=true;
+    if(!String(out||'').trim()){e.content=EMPTY_FINAL;e.failed=true;}else e.done=true;
   }catch(err){
     if(err.name==='AbortError'){refresh(e);throw err;}
     e.content=(e.content?e.content+'\n\n':'')+'⚠️ تعذّرت كتابة الخلاصة: '+err.message;e.failed=true;
@@ -853,7 +856,7 @@ function needsResume(){
   if(running||!entries.length)return false;
   let lu=-1;entries.forEach((e,i)=>{if(e.type==='user')lu=i;});
   if(lu<0)return false;
-  return !entries.slice(lu).some(e=>e.type==='final'&&e.done&&!e.failed);
+  return !entries.slice(lu).some(e=>e.type==='final'&&e.done&&!e.failed&&String(e.content||'').trim());
 }
 async function resumeFinal(){
   if(running)return;
@@ -876,7 +879,7 @@ async function resumeFinal(){
       refresh(fe);setSpeaking('__mod',true);
       const onD=streamInto(fe);
       try{
-        await ask({model:cfg.moderator.model,signal:sig,maxTokens:finalMax(),effort:cfg.finalEffort,onDelta:t=>onD(partial+t),onReason:thinkInto(fe),system:modSystem(),
+        await ask({model:cfg.moderator.model,signal:sig,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>onD(partial+t),onReason:thinkInto(fe),system:modSystem(),
           user:tx+'\n\n---\n'+finalPrompt()+'\n\n---\nملاحظة مهمة: كنت تكتب هذه الخلاصة وانقطعت الكتابة. هذه نهاية ما كتبته حتى الآن:\n<<<\n'+partial.slice(-8000)+'\n>>>\nأكمل الكتابة من النقطة التي توقفت عندها بالضبط، ولا تكرر أي جزء مكتوب، ولا تكتب أي مقدمة أو تعليق. إذا توقفت داخل كتلة كود فأكمل الكود مباشرة من نفس السطر.'});
         fe.done=true;
       }finally{setSpeaking('__mod',false);refresh(fe);const el=elMap.get(fe);if(el&&fe.done)addFinalActions(el,fe);saveSession();}
@@ -1475,16 +1478,16 @@ async function attachmentParts(){
   partsCache={pid:cur.id,n:entries.length,parts};
   return parts;
 }
-async function ask({model,system,user,maxTokens,effort,onDelta,onReason,signal}){
+async function ask({model,system,user,maxTokens,effort,reasoningMax,onDelta,onReason,signal}){
   const parts=await attachmentParts();
   const msgs=c=>[{role:'system',content:system},{role:'user',content:c}];
-  if(!parts.length)return callModel({model,messages:msgs(user),maxTokens,effort,onDelta,onReason,signal});
-  try{return await callModel({model,messages:msgs([...parts,{type:'text',text:user}]),maxTokens,effort,onDelta,onReason,signal});}
+  if(!parts.length)return callModel({model,messages:msgs(user),maxTokens,effort,reasoningMax,onDelta,onReason,signal});
+  try{return await callModel({model,messages:msgs([...parts,{type:'text',text:user}]),maxTokens,effort,reasoningMax,onDelta,onReason,signal});}
   catch(err){
     if(err.name==='AbortError'||!/^4\d\d/.test(err.message||''))throw err;
     const t=parts.filter(p=>p.type==='text');
     t.push({type:'text',text:'(ملاحظة: يوجد مرفقات مرئية لم تستطع قراءتها مباشرة؛ اعتمد على ما يذكره زملاؤك عنها.)'});
-    return callModel({model,messages:msgs([...t,{type:'text',text:user}]),maxTokens,effort,onDelta,onReason,signal});
+    return callModel({model,messages:msgs([...t,{type:'text',text:user}]),maxTokens,effort,reasoningMax,onDelta,onReason,signal});
   }
 }
 
