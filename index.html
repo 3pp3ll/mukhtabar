@@ -571,16 +571,17 @@ const DEFAULT_CFG={
     {id:'deepseek',name:'DeepSeek',alias:'المدقق',icon:'🔍',model:'deepseek/deepseek-v4-pro-0813',color:'#4d6bfe',on:true,
      role:'المدقق المنطقي: يراجع الحسابات والمنطق والكود خطوة بخطوة، ويقترح دائماً الحل الأبسط والأقل تكلفة في التنفيذ.'}
   ],
-  moderator:{name:'رئيس الجلسة',model:'anthropic/claude-fable-5.2',color:'#a16207',
+  moderator:{name:'رئيس الجلسة',model:'anthropic/claude-opus-5.5',color:'#a16207',
    role:'رئيس جلسة محايد وخبير: يدير النقاش ولا ينحاز لأي عضو. بعد كل جولة يقيّم مدى التوافق ويحدد النقاط الخلافية التي يجب حسمها. في النهاية يدمج أفضل ما اتفق عليه الأعضاء في إجابة واحدة كاملة، وعند الخلاف يرجّح الحجة الأقوى لا رأي الأغلبية. عند طلب داشبورد أو واجهة يكتب ملف HTML احترافياً كاملاً يعمل مباشرة: تصميم نظيف، مؤشرات أداء (KPIs) واضحة في الأعلى، رسوم بيانية مناسبة لنوع كل بيان، فلاتر تفاعلية، ودعم كامل للعربية واتجاه RTL.'}
 };
 let cfg=Object.assign(JSON.parse(JSON.stringify(DEFAULT_CFG)),store.get('rt_cfg',{}));
 const PRESET='2026-11';
-const RECOMMENDED={claude:'anthropic/claude-sonnet-5.5',gpt:'openai/gpt-6.1-sol',gemini:'google/gemini-4-carbon',grok:'x-ai/grok-4.7',deepseek:'deepseek/deepseek-v4-pro-0813',moderator:'anthropic/claude-fable-5.2'};
+const RECOMMENDED={claude:'anthropic/claude-sonnet-5.5',gpt:'openai/gpt-6.1-sol',gemini:'google/gemini-4-carbon',grok:'x-ai/grok-4.7',deepseek:'deepseek/deepseek-v4-pro-0813',moderator:'anthropic/claude-opus-5.5'};
 function applyRecommended(t){t.members.forEach(m=>{if(RECOMMENDED[m.id])m.model=RECOMMENDED[m.id];});t.moderator.model=RECOMMENDED.moderator;t.maxTokens=Math.max(+t.maxTokens||0,6000);t.preset=PRESET;t.autoPicked=true;}
 if(cfg.preset!==PRESET){applyRecommended(cfg);store.set('rt_cfg',cfg);}
 if(!cfg.dsAdded){if(!cfg.members.some(m=>m.id==='deepseek')&&cfg.members.length<6){const d=DEFAULT_CFG.members.find(m=>m.id==='deepseek');cfg.members.push(JSON.parse(JSON.stringify(d)));}cfg.dsAdded=true;store.set('rt_cfg',cfg);}
 if(!cfg.moderator.role){cfg.moderator.role=DEFAULT_CFG.moderator.role;store.set('rt_cfg',cfg);}
+if(!cfg.modOpus){if(cfg.moderator.model==='anthropic/claude-fable-5.2')cfg.moderator.model='anthropic/claude-opus-5.5';cfg.modOpus=true;store.set('rt_cfg',cfg);}
 let projects=store.get('rt_projects',null);
 if(!Array.isArray(projects)||!projects.length){projects=[{id:'p'+Date.now(),name:'المشروع الأول',entries:store.get('rt_session',[]),stats:Object.assign(newStats(),store.get('rt_stats',{})),outType:'auto',updated:Date.now()}];}
 let cur=projects.find(p=>p.id===store.get('rt_cur',''))||projects[0];
@@ -845,7 +846,18 @@ async function auditCheck(sig){
 }
 const finalMax=()=>cur.outType==='flutter'?Math.max(cfg.finalMaxTokens,32000):cfg.finalMaxTokens;
 const finalThink=()=>Math.max(1024,Math.min(8000,Math.floor(finalMax()/4)));
-const EMPTY_FINAL='⚠️ انتهى رد رئيس الجلسة بدون أي نص (غالباً استهلك التفكير كل الحد المسموح). اضغط «↻ أكمل إلى الخلاصة» بالأسفل لإعادة المحاولة.';
+const EMPTY_FINAL='⚠️ انتهى رد رئيس الجلسة بدون أي نص (غالباً استهلك التفكير كل الحد المسموح). لا تُعِد المحاولة بنفس النموذج: غيّر نموذج رئيس الجلسة من الإعدادات (مثل anthropic/claude-opus-5.5)، ثم اضغط «↻ أكمل إلى الخلاصة».';
+const SILENT_FINAL='⏱ توقفت الخلاصة تلقائياً لحمايتك من التكلفة: لم يكتب رئيس الجلسة أي نص خلال دقيقتين (غالباً غرق في التفكير). غيّر نموذج رئيس الجلسة من الإعدادات (مثل anthropic/claude-opus-5.5)، ثم اضغط «↻ أكمل إلى الخلاصة».';
+const FINAL_SILENCE=120000;
+function silenceGuard(parent,ms){
+  const c=new AbortController();const g={signal:c.signal,silent:false,t:null};
+  const onP=()=>c.abort();
+  if(parent){if(parent.aborted)c.abort();else parent.addEventListener('abort',onP,{once:true});}
+  g.t=setTimeout(()=>{g.silent=true;c.abort();},ms);
+  g.got=()=>{if(g.t){clearTimeout(g.t);g.t=null;}};
+  g.end=()=>{g.got();if(parent)parent.removeEventListener('abort',onP);};
+  return g;
+}
 function finalPrompt(){
   return `اكتب الآن الإجابة النهائية الموحّدة باسم الطاولة كلها، مبنية على أفضل ما اتفق عليه الأعضاء، بهذا الهيكل:
 ## الخلاصة
@@ -865,14 +877,17 @@ async function finalize(sig){
   setSpeaking('__mod',true);
   const e={type:'final',name:cfg.moderator.name,model:cfg.moderator.model,color:cfg.moderator.color,content:''};
   const el=addEntry(e);
+  const g=silenceGuard(sig,FINAL_SILENCE);const sd=streamInto(e);
   try{
-    const out=await ask({model:cfg.moderator.model,signal:sig,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:streamInto(e),onReason:thinkInto(e),system:modSystem(),
+    const out=await ask({model:cfg.moderator.model,signal:g.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g.got();sd(t);},onReason:thinkInto(e),system:modSystem(),
       user:transcriptText()+'\n\n---\n'+finalPrompt()});
     if(!String(out||'').trim()){e.content=EMPTY_FINAL;e.failed=true;}else e.done=true;
   }catch(err){
-    if(err.name==='AbortError'){refresh(e);throw err;}
-    e.content=(e.content?e.content+'\n\n':'')+'⚠️ تعذّرت كتابة الخلاصة: '+err.message;e.failed=true;
-  }finally{refresh(e);if(e.content&&(e.done||e.failed))addFinalActions(el,e);setSpeaking('__mod',false);saveSession();}
+    if(err.name==='AbortError'&&g.silent&&!String(e.content||'').trim()){e.content=SILENT_FINAL;e.failed=true;}
+    else if(err.name==='AbortError'){refresh(e);throw err;}
+    else
+    {e.content=(e.content?e.content+'\n\n':'')+'⚠️ تعذّرت كتابة الخلاصة: '+err.message;e.failed=true;}
+  }finally{g.end();refresh(e);if(e.content&&(e.done||e.failed))addFinalActions(el,e);setSpeaking('__mod',false);saveSession();}
 }
 function needsResume(){
   if(running||!entries.length)return false;
@@ -899,12 +914,15 @@ async function resumeFinal(){
     if(partial){
       fe.failed=true;const tx=transcriptText();fe.failed=false;
       refresh(fe);setSpeaking('__mod',true);
-      const onD=streamInto(fe);
+      const onD=streamInto(fe);const g2=silenceGuard(sig,FINAL_SILENCE);
       try{
-        await ask({model:cfg.moderator.model,signal:sig,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>onD(partial+t),onReason:thinkInto(fe),system:modSystem(),
+        await ask({model:cfg.moderator.model,signal:g2.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g2.got();onD(partial+t);},onReason:thinkInto(fe),system:modSystem(),
           user:tx+'\n\n---\n'+finalPrompt()+'\n\n---\nملاحظة مهمة: كنت تكتب هذه الخلاصة وانقطعت الكتابة. هذه نهاية ما كتبته حتى الآن:\n<<<\n'+partial.slice(-8000)+'\n>>>\nأكمل الكتابة من النقطة التي توقفت عندها بالضبط، ولا تكرر أي جزء مكتوب، ولا تكتب أي مقدمة أو تعليق. إذا توقفت داخل كتلة كود فأكمل الكود مباشرة من نفس السطر.'});
         fe.done=true;
-      }finally{setSpeaking('__mod',false);refresh(fe);const el=elMap.get(fe);if(el&&fe.done)addFinalActions(el,fe);saveSession();}
+      }catch(err){
+        if(err.name==='AbortError'&&g2.silent){fe.content=partial;toast('توقف الإكمال تلقائياً: لم يكتب رئيس الجلسة شيئاً خلال دقيقتين. جرّب نموذجاً آخر.');}
+        else throw err;
+      }finally{g2.end();setSpeaking('__mod',false);refresh(fe);const el=elMap.get(fe);if(el&&fe.done)addFinalActions(el,fe);saveSession();}
     }else{
       if(fe){const i=entries.indexOf(fe);entries.splice(i,1);const d=entries[i-1];if(d&&d.type==='round'&&d.content==='الخلاصة')entries.splice(i-1,1);}
       while(entries.length&&entries[entries.length-1].type==='error')entries.pop();
