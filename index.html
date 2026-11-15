@@ -92,7 +92,15 @@ body.resizing{cursor:col-resize;user-select:none}
 .rm small{display:block;color:var(--muted);font-size:12px;direction:ltr;text-align:right;word-break:break-all}
 .rm p{margin:2px 0 0;font-size:12px;color:var(--muted);line-height:1.5}
 .rm.off{opacity:.45}
-.chatcol{display:grid;grid-template-rows:1fr auto;min-height:0;min-width:0}
+.chatcol{display:grid;grid-template-rows:1fr auto;min-height:0;min-width:0;position:relative}
+#toBottom{position:absolute;z-index:6;width:42px;height:42px;border-radius:999px;border:1px solid var(--line);background:var(--accent);color:var(--accent-ink);font-size:20px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.18);cursor:pointer;transition:opacity .2s,transform .2s}
+#toBottom.off{opacity:0;transform:translateY(8px);pointer-events:none}
+#findBar{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:7;display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 8px;box-shadow:0 8px 24px rgba(0,0,0,.14);width:min(520px,calc(100% - 24px))}
+#findBar[hidden]{display:none}
+#findInput{flex:1;min-width:0;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);border-radius:8px;padding:7px 10px;font:inherit;font-size:14px}
+#findCount{font-size:12.5px;color:var(--muted);min-width:44px;text-align:center}
+mark.hit{background:#fde68a;color:#1f2937;border-radius:3px;padding:0 1px}
+mark.hit.cur{background:#f59e0b;color:#111}
 #feed{overflow:auto;padding:22px max(22px,calc((100% - 960px) / 2)) 10px;display:flex;flex-direction:column;gap:14px}
 #feed>*{max-width:none}
 .msg,.divider,.note,.err,.greet{max-width:none!important}
@@ -301,6 +309,7 @@ body:not(.owner) [data-owner]{display:none!important}
       <button class="btn" id="tableBtn" data-owner title="الطاولة والأعضاء (للمالك فقط)">👥 <span class="t">الطاولة</span></button>
       <button class="btn" id="labBtn" title="تقييم الجلسات">⭐ <span class="t">التقييم</span></button>
       <button class="btn" id="exportBtn" title="تصدير المحضر كنص للقراءة (.md) — لا يُستورد">⤓ <span class="t">المحضر</span></button>
+      <button class="btn" id="findBtn" title="بحث داخل المحادثة (Ctrl+F)">🔍</button>
       <button class="btn" id="helpBtn" title="دليل الأيقونات">؟</button>
       <button class="btn" id="themeBtn" title="الوضع الليلي / النهاري">🌙</button>
       <button class="btn" id="fsBtn" title="حجم الخط">Aa</button>
@@ -317,7 +326,9 @@ body:not(.owner) [data-owner]{display:none!important}
     </aside>
     <div class="resizer" id="resizer" title="اسحب لتغيير العرض · نقرتان لإرجاع العرض الافتراضي" role="separator" aria-orientation="vertical"></div>
     <div class="chatcol">
+      <div id="findBar" hidden><input id="findInput" type="search" placeholder="ابحث داخل المحادثة…" aria-label="بحث داخل المحادثة"><span id="findCount"></span><button class="btn sm" id="findPrev" type="button" title="السابق">↑</button><button class="btn sm" id="findNext" type="button" title="التالي">↓</button><button class="btn sm" id="findClose" type="button" title="إغلاق">✕</button></div>
       <div id="feed"></div>
+      <button id="toBottom" class="off" type="button" title="النزول لآخر النقاش" aria-label="النزول لآخر النقاش">↓</button>
       <div class="composer">
         <div id="compResizer" title="اسحب لتكبير منطقة الكتابة أو تصغيرها · نقرتان للحجم الافتراضي"></div>
         <div class="toolbar">
@@ -810,7 +821,11 @@ async function speak(m,r,snap,focus,sig,fix){
     :transcriptText()+`\n\n---\nالآن دورك يا «${aliasOf(m)}» في الجولة ${r}.`+(focus?`\nطلب رئيس الجلسة التركيز على: ${focus}`:'')+
      '\nرُد على زملائك بألقابهم: ما الذي توافق عليه، وما الذي تعترض عليه ولماذا، وما الإضافة التي تقرّبنا من إجابة واحدة مشتركة.';
   try{
-    const out=await ask({model:m.model,system:memberSystem(m),user,maxTokens:cfg.maxTokens,effort:cfg.effort,onDelta:streamInto(e),onReason:thinkInto(e),signal:sig});
+    let out=await ask({model:m.model,system:memberSystem(m),user,maxTokens:cfg.maxTokens,effort:cfg.effort,onDelta:streamInto(e),onReason:thinkInto(e),signal:sig});
+    if(!out.trim()&&cfg.effort!=='off'){
+      thinkMap.delete(e);e.content='';refresh(e);
+      out=await ask({model:m.model,system:memberSystem(m),user,maxTokens:cfg.maxTokens,effort:'off',onDelta:streamInto(e),onReason:thinkInto(e),signal:sig});
+    }
     if(!out.trim()){e.content='_(لم يُرجع النموذج نصاً — جرّب رفع حد الرموز أو خفض مستوى التفكير من الإعدادات)_';e.failed=true;}
   }catch(err){
     if(err.name==='AbortError'){if(!e.content){e.content='_(أُوقف)_';e.failed=true;}refresh(e);throw err;}
@@ -1551,6 +1566,8 @@ const GUIDE=[
   ['＋','إرفاق ملفات','بجانب خانة الكتابة: صور، فيديو، PDF، Excel، ملفات برمجية. لا تستخدمه لملفات المشاريع.'],
   ['⤓','المحضر','أعلى الصفحة: نسخة نصية من النقاش للقراءة (‎.md‎)، ولا تُستورد كمشروع.'],
   ['⭐','التقييم','تقييم الجلسات وتحليل النتائج.'],
+  ['🔍','بحث في المحادثة','أعلى الصفحة: اكتب أي كلمة فتُظلَّل في النقاش كله، وتنقّل بين النتائج بالسهمين أو Enter.'],
+  ['↓','النزول للأسفل','يظهر بجانب النقاش عندما تصعد للأعلى، ويرجعك لآخر ما يُكتب.'],
   ['🌙','الوضع الليلي','التبديل بين الوضع الليلي والنهاري، ويُحفظ اختيارك.'],
   ['Aa','حجم الخط','اختيار حجم النصوص من 10 إلى 18، ويتغير حجم الصفحة كلها.'],
   ['═','حجم منطقة الكتابة','اسحب الخط الصغير أعلى منطقة الكتابة للأعلى أو للأسفل.'],
@@ -1658,6 +1675,60 @@ $('#fsBtn').onclick=()=>{let cur=15;try{cur=JSON.parse(localStorage.getItem('rt_
 })();
 $('#themeBtn').onclick=()=>{const t=currentTheme()==='dark'?'light':'dark';applyTheme(t);store.set('rt_theme',t);};
 applyTheme(currentTheme());
+/* ---------- النزول للأسفل ---------- */
+function placeToBottom(){
+  const b=$('#toBottom'),f=$('#feed'),col=document.querySelector('.chatcol');if(!b||!f||!col)return;
+  const cs=getComputedStyle(f),padL=parseFloat(cs.paddingLeft)||16,cr=col.getBoundingClientRect(),fr=f.getBoundingClientRect();
+  let left=(fr.left-cr.left)+padL-38-42;if(left<8)left=8;
+  b.style.left=left+'px';b.style.top=(fr.bottom-cr.top-42-16)+'px';
+  b.classList.toggle('off',nearBottom());
+}
+$('#feed').addEventListener('scroll',placeToBottom,{passive:true});
+window.addEventListener('resize',placeToBottom);
+new MutationObserver(()=>requestAnimationFrame(placeToBottom)).observe($('#feed'),{childList:true,subtree:true,characterData:true});
+$('#toBottom').onclick=()=>{const f=$('#feed');f.scrollTo({top:f.scrollHeight,behavior:'smooth'});};
+setTimeout(placeToBottom,300);
+
+/* ---------- بحث داخل المحادثة ---------- */
+let findHits=[],findIdx=-1;
+function clearFind(){
+  document.querySelectorAll('#feed mark.hit').forEach(m=>{const p=m.parentNode;p.replaceChild(document.createTextNode(m.textContent),m);p.normalize();});
+  findHits=[];findIdx=-1;$('#findCount').textContent='';
+}
+function runFind(){
+  clearFind();
+  const q=$('#findInput').value.trim();if(!q)return;
+  const rx=new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+  const w=document.createTreeWalker($('#feed'),NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest('script,style,mark,button,.actions')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  const nodes=[];while(w.nextNode())if(rx.test(w.currentNode.nodeValue)){nodes.push(w.currentNode);rx.lastIndex=0;}
+  nodes.forEach(n=>{
+    const t=n.nodeValue,frag=document.createDocumentFragment();let last=0;rx.lastIndex=0;let m;
+    while((m=rx.exec(t))){frag.appendChild(document.createTextNode(t.slice(last,m.index)));const mk=document.createElement('mark');mk.className='hit';mk.textContent=m[0];frag.appendChild(mk);findHits.push(mk);last=m.index+m[0].length;}
+    frag.appendChild(document.createTextNode(t.slice(last)));n.parentNode.replaceChild(frag,n);
+  });
+  if(findHits.length)gotoFind(0);else $('#findCount').textContent='لا نتائج';
+}
+function gotoFind(i){
+  if(!findHits.length)return;
+  if(findHits[findIdx])findHits[findIdx].classList.remove('cur');
+  findIdx=(i+findHits.length)%findHits.length;const h=findHits[findIdx];
+  h.classList.add('cur');h.scrollIntoView({block:'center',behavior:'smooth'});
+  $('#findCount').textContent=(findIdx+1)+'/'+findHits.length;
+}
+let findT=null;
+function openFind(){$('#findBar').hidden=false;$('#findInput').focus();$('#findInput').select();}
+function closeFind(){clearFind();$('#findBar').hidden=true;$('#findInput').value='';}
+$('#findBtn').onclick=()=>$('#findBar').hidden?openFind():closeFind();
+$('#findInput').addEventListener('input',()=>{clearTimeout(findT);findT=setTimeout(runFind,250);});
+$('#findInput').addEventListener('keydown',ev=>{
+  if(ev.key==='Enter'){ev.preventDefault();if(!findHits.length)runFind();else gotoFind(findIdx+(ev.shiftKey?-1:1));}
+  else if(ev.key==='Escape'){ev.preventDefault();closeFind();}
+});
+$('#findNext').onclick=()=>findHits.length?gotoFind(findIdx+1):runFind();
+$('#findPrev').onclick=()=>gotoFind(findIdx-1);
+$('#findClose').onclick=closeFind;
+document.addEventListener('keydown',ev=>{if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==='f'&&!document.querySelector('dialog[open]')){ev.preventDefault();openFind();}});
+
 $('#helpBtn').onclick=()=>{$('#helpBody').innerHTML=guideHTML();$('#helpDlg').showModal();};
 $('#resumeBtn').onclick=resumeFinal;
 $('#attachBtn').onclick=()=>{$('#attachInput').value='';$('#attachInput').click();};
