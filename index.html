@@ -401,6 +401,7 @@ body:not(.owner) [data-owner]{display:none!important}
       <div class="row">
         <label class="f">الاسم<input type="text" id="sModName"></label>
         <label class="f">النموذج<input type="text" id="sModModel" class="ltr" list="modelList"></label>
+        <label class="f">نموذج الخلاصة للكود (Flutter وتطبيق الويب والصفحات) — فارغ = نفس النموذج<input type="text" id="sModCode" class="ltr" list="modelList" placeholder="anthropic/claude-sonnet-5.5"></label>
       </div>
       <label class="f" style="margin-top:10px">الوصف (دوره وطريقة عمله)<textarea id="sModRole" rows="4"></textarea></label>
     </fieldset>
@@ -523,6 +524,23 @@ jobs:
           [ -d /tmp/keep/assets ] && cp -r /tmp/keep/assets . || true
           [ -d /tmp/keep/test ] && cp -r /tmp/keep/test . || true
 
+      - name: App icon and name
+        run: |
+          if [ -d assets/launcher ]; then
+            for d in assets/launcher/mipmap-*; do
+              [ -d "$d" ] || continue
+              mkdir -p "android/app/src/main/res/$(basename "$d")"
+              cp "$d"/* "android/app/src/main/res/$(basename "$d")/"
+            done
+            [ -f assets/launcher/web/favicon.png ] && cp assets/launcher/web/favicon.png web/favicon.png || true
+            [ -d assets/launcher/web/icons ] && cp assets/launcher/web/icons/*.png web/icons/ || true
+          fi
+          if [ -f assets/launcher/label.txt ]; then
+            L=$(head -1 assets/launcher/label.txt | tr -d '\r')
+            sed -i "s|android:label=\"[^\"]*\"|android:label=\"$L\"|" android/app/src/main/AndroidManifest.xml
+            sed -i "s|<title>[^<]*</title>|<title>$L</title>|" web/index.html
+          fi
+
       - run: flutter pub get
 
       - name: Analyze
@@ -590,7 +608,7 @@ const DEFAULT_CFG={
     {id:'deepseek',name:'DeepSeek',alias:'المدقق',icon:'🔍',model:'deepseek/deepseek-v4-pro-0813',color:'#4d6bfe',on:true,
      role:'المدقق المنطقي: يراجع الحسابات والمنطق والكود خطوة بخطوة، ويقترح دائماً الحل الأبسط والأقل تكلفة في التنفيذ.'}
   ],
-  moderator:{name:'رئيس الجلسة',model:'anthropic/claude-opus-5.5',color:'#a16207',
+  moderator:{name:'رئيس الجلسة',model:'anthropic/claude-opus-5.5',codeModel:'anthropic/claude-sonnet-5.5',color:'#a16207',
    role:'رئيس جلسة محايد وخبير: يدير النقاش ولا ينحاز لأي عضو. بعد كل جولة يقيّم مدى التوافق ويحدد النقاط الخلافية التي يجب حسمها. في النهاية يدمج أفضل ما اتفق عليه الأعضاء في إجابة واحدة كاملة، وعند الخلاف يرجّح الحجة الأقوى لا رأي الأغلبية. عند طلب داشبورد أو واجهة يكتب ملف HTML احترافياً كاملاً يعمل مباشرة: تصميم نظيف، مؤشرات أداء (KPIs) واضحة في الأعلى، رسوم بيانية مناسبة لنوع كل بيان، فلاتر تفاعلية، ودعم كامل للعربية واتجاه RTL.'}
 };
 let cfg=Object.assign(JSON.parse(JSON.stringify(DEFAULT_CFG)),store.get('rt_cfg',{}));
@@ -600,6 +618,7 @@ function applyRecommended(t){t.members.forEach(m=>{if(RECOMMENDED[m.id])m.model=
 if(cfg.preset!==PRESET){applyRecommended(cfg);store.set('rt_cfg',cfg);}
 if(!cfg.dsAdded){if(!cfg.members.some(m=>m.id==='deepseek')&&cfg.members.length<6){const d=DEFAULT_CFG.members.find(m=>m.id==='deepseek');cfg.members.push(JSON.parse(JSON.stringify(d)));}cfg.dsAdded=true;store.set('rt_cfg',cfg);}
 if(!cfg.moderator.role){cfg.moderator.role=DEFAULT_CFG.moderator.role;store.set('rt_cfg',cfg);}
+if(!cfg.modCode){if(cfg.moderator.codeModel==null)cfg.moderator.codeModel='anthropic/claude-sonnet-5.5';cfg.modCode=true;store.set('rt_cfg',cfg);}
 if(!cfg.modOpus){if(cfg.moderator.model==='anthropic/claude-fable-5.2')cfg.moderator.model='anthropic/claude-opus-5.5';cfg.modOpus=true;store.set('rt_cfg',cfg);}
 let projects=store.get('rt_projects',null);
 if(!Array.isArray(projects)||!projects.length){projects=[{id:'p'+Date.now(),name:'المشروع الأول',entries:store.get('rt_session',[]),stats:Object.assign(newStats(),store.get('rt_stats',{})),outType:'auto',updated:Date.now()}];}
@@ -896,10 +915,12 @@ async function auditCheck(sig){
   }catch(err){if(err.name==='AbortError')throw err;addEntry({type:'error',content:'تعذّر تدقيق الإجماع: '+err.message});return null;}
   finally{setSpeaking('__mod',false);}
 }
+const finalModel=()=>(['flutter','web','app'].includes(cur.outType)&&cfg.moderator.codeModel)?cfg.moderator.codeModel:cfg.moderator.model;
+const finalSilence=()=>Math.min(300000,120000+Math.floor(transcriptText().length/2000)*1000);
 const finalMax=()=>cur.outType==='flutter'?Math.max(cfg.finalMaxTokens,32000):cfg.finalMaxTokens;
 const finalThink=()=>Math.max(1024,Math.min(8000,Math.floor(finalMax()/4)));
 const EMPTY_FINAL='⚠️ انتهى رد رئيس الجلسة بدون أي نص (غالباً استهلك التفكير كل الحد المسموح). لا تُعِد المحاولة بنفس النموذج: غيّر نموذج رئيس الجلسة من الإعدادات (مثل anthropic/claude-opus-5.5)، ثم اضغط «↻ أكمل إلى الخلاصة».';
-const SILENT_FINAL='⏱ توقفت الخلاصة تلقائياً لحمايتك من التكلفة: لم يكتب رئيس الجلسة أي نص خلال دقيقتين (غالباً غرق في التفكير). غيّر نموذج رئيس الجلسة من الإعدادات (مثل anthropic/claude-opus-5.5)، ثم اضغط «↻ أكمل إلى الخلاصة».';
+const SILENT_FINAL='⏱ توقفت الخلاصة تلقائياً لحمايتك من التكلفة: لم يكتب رئيس الجلسة أي نص خلال المهلة (دقيقتان، وأطول قليلاً للنقاشات الطويلة). جرّب نموذجاً أسرع لكتابة الخلاصة من الإعدادات (مثل anthropic/claude-sonnet-5.5)، ثم اضغط «↻ أكمل إلى الخلاصة».';
 const FINAL_SILENCE=120000;
 function silenceGuard(parent,ms){
   const c=new AbortController();const g={signal:c.signal,silent:false,t:null};
@@ -927,11 +948,11 @@ function finalPrompt(){
 async function finalize(sig){
   addEntry({type:'round',content:'الخلاصة'});
   setSpeaking('__mod',true);
-  const e={type:'final',name:cfg.moderator.name,model:cfg.moderator.model,color:cfg.moderator.color,content:''};
+  const e={type:'final',name:cfg.moderator.name,model:finalModel(),color:cfg.moderator.color,content:''};
   const el=addEntry(e);
-  const g=silenceGuard(sig,FINAL_SILENCE);const sd=streamInto(e);
+  const g=silenceGuard(sig,finalSilence());const sd=streamInto(e);
   try{
-    const out=await ask({model:cfg.moderator.model,signal:g.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g.got();sd(t);},onReason:thinkInto(e),system:modSystem(),
+    const out=await ask({model:finalModel(),signal:g.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g.got();sd(t);},onReason:thinkInto(e),system:modSystem(),
       user:transcriptText()+'\n\n---\n'+finalPrompt()});
     if(String(out||'').trim()){cur.tested=false;cur.verified=false;}
     if(!String(out||'').trim()){e.content=EMPTY_FINAL+(lastCall.out?'\n\n(استهلك '+lastCall.out.toLocaleString('en')+' رمزاً'+(lastCall.think?'، منها '+lastCall.think.toLocaleString('en')+' في التفكير المخفي':'')+(lastCall.finish?' — سبب التوقف: '+lastCall.finish:'')+')':'');e.failed=true;}else e.done=true;
@@ -967,9 +988,9 @@ async function resumeFinal(){
     if(partial){
       fe.failed=true;const tx=transcriptText();fe.failed=false;
       refresh(fe);setSpeaking('__mod',true);
-      const onD=streamInto(fe);const g2=silenceGuard(sig,FINAL_SILENCE);
+      const onD=streamInto(fe);const g2=silenceGuard(sig,finalSilence());fe.model=finalModel();
       try{
-        await ask({model:cfg.moderator.model,signal:g2.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g2.got();onD(partial+t);},onReason:thinkInto(fe),system:modSystem(),
+        await ask({model:finalModel(),signal:g2.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g2.got();onD(partial+t);},onReason:thinkInto(fe),system:modSystem(),
           user:tx+'\n\n---\n'+finalPrompt()+'\n\n---\nملاحظة مهمة: كنت تكتب هذه الخلاصة وانقطعت الكتابة. هذه نهاية ما كتبته حتى الآن:\n<<<\n'+partial.slice(-8000)+'\n>>>\nأكمل الكتابة من النقطة التي توقفت عندها بالضبط، ولا تكرر أي جزء مكتوب، ولا تكتب أي مقدمة أو تعليق. إذا توقفت داخل كتلة كود فأكمل الكود مباشرة من نفس السطر.'});
         fe.done=true;cur.tested=false;cur.verified=false;
       }catch(err){
@@ -1166,13 +1187,13 @@ function memberCard(m,i){
 function renderMemberCards(){const w=$('#sMembers');w.innerHTML='';draft.members.forEach((m,i)=>w.appendChild(memberCard(m,i)));}
 function openSettings(){
   draft=JSON.parse(JSON.stringify(cfg));
-  $('#sKey').value=draft.apiKey;$('#sModName').value=draft.moderator.name;$('#sModModel').value=draft.moderator.model;$('#sModRole').value=draft.moderator.role||'';
+  $('#sKey').value=draft.apiKey;$('#sModName').value=draft.moderator.name;$('#sModModel').value=draft.moderator.model;$('#sModCode').value=draft.moderator.codeModel||'';$('#sModRole').value=draft.moderator.role||'';
   $('#sRounds').value=draft.rounds;$('#sMax').value=draft.maxTokens;$('#sFinalMax').value=draft.finalMaxTokens;$('#sTemp').value=draft.temperature;
   $('#sEffort').value=draft.effort;$('#sFinalEffort').value=draft.finalEffort;$('#sAuto').checked=draft.autoStop;draft.gh=Object.assign({token:'',repo:'',branch:''},draft.gh);$('#sGhRepo').value=draft.gh.repo;$('#sGhBranch').value=draft.gh.branch;$('#sGhToken').value=draft.gh.token;$('#sAudit').checked=draft.auditOn;$('#sAuditRounds').value=draft.auditRounds;
   renderMemberCards();$('#settings').showModal();
 }
 function saveSettings(){
-  draft.apiKey=$('#sKey').value.trim();draft.moderator.name=$('#sModName').value.trim()||'رئيس الجلسة';draft.moderator.model=$('#sModModel').value.trim();draft.moderator.role=$('#sModRole').value.trim();
+  draft.apiKey=$('#sKey').value.trim();draft.moderator.name=$('#sModName').value.trim()||'رئيس الجلسة';draft.moderator.model=$('#sModModel').value.trim();draft.moderator.codeModel=$('#sModCode').value.trim();draft.moderator.role=$('#sModRole').value.trim();
   draft.rounds=Math.max(1,Math.min(8,+$('#sRounds').value||3));draft.maxTokens=+$('#sMax').value||3000;draft.finalMaxTokens=+$('#sFinalMax').value||16000;
   draft.temperature=Math.max(0,Math.min(2,parseFloat($('#sTemp').value)));if(isNaN(draft.temperature))draft.temperature=0.7;
   draft.effort=$('#sEffort').value;draft.finalEffort=$('#sFinalEffort').value;draft.autoStop=$('#sAuto').checked;draft.gh={repo:$('#sGhRepo').value.trim(),branch:$('#sGhBranch').value.trim(),token:$('#sGhToken').value.trim()};draft.auditOn=$('#sAudit').checked;draft.auditRounds=Math.max(1,Math.min(3,+$('#sAuditRounds').value||1));
