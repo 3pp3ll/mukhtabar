@@ -183,6 +183,9 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mu
 .mcard input[type=text]{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 8px;min-width:0;width:100%}
 .mcard input[type=color]{width:34px;height:30px;border:none;background:none;padding:0}
 .small{font-size:12px;color:var(--muted)}
+.snapnote{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--ink);font-size:13.5px;line-height:1.7}
+.snapnote b{color:var(--ink)}
+.snapnote.ltr{direction:ltr;text-align:right;font-size:12.5px;margin-top:8px;background:var(--panel-2);border:1px solid var(--line)}
 .ok{color:var(--accent)}
 .bad{color:var(--danger)}
 .dfoot{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line);position:sticky;bottom:0;background:var(--panel)}
@@ -1358,8 +1361,8 @@ function snapHTML(st){
     <div><small>توافق مبكر</small><b>${st.consensus?'نعم':'لا'}</b></div>
     <div><small>خلاصة مكتملة</small><b>${st.hasFinal?'نعم':'لا'}</b></div>
   </div>
-  ${st.topic?`<div class="small" style="margin-top:10px"><b>الموضوع:</b> ${esc(st.topic.slice(0,220))}${st.topic.length>220?'…':''}</div>`:''}
-  <div class="small" data-owner style="margin-top:6px;direction:ltr;text-align:right">${st.members.map(m=>esc(m.name)+': '+esc(m.model)).join(' · ')} · ★ ${esc(st.moderator)}</div>`;
+  ${st.topic?`<div class="snapnote"><b>الموضوع:</b> ${esc(st.topic.slice(0,220))}${st.topic.length>220?'…':''}</div>`:''}
+  <div class="snapnote ltr" data-owner>${st.members.map(m=>esc(m.name)+': '+esc(m.model)).join(' · ')} · ★ ${esc(st.moderator)}</div>`;
 }
 function openLab(view,id){labView=view||'new';labSel=id||null;renderLab();if(!$('#lab').open)$('#lab').showModal();}
 function renderLabList(){
