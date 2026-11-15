@@ -955,7 +955,8 @@ async function finalize(sig){
     const out=await ask({model:finalModel(),signal:g.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g.got();sd(t);},onReason:thinkInto(e),system:modSystem(),
       user:transcriptText()+'\n\n---\n'+finalPrompt()});
     if(String(out||'').trim()){cur.tested=false;cur.verified=false;}
-    if(!String(out||'').trim()){e.content=EMPTY_FINAL+(lastCall.out?'\n\n(استهلك '+lastCall.out.toLocaleString('en')+' رمزاً'+(lastCall.think?'، منها '+lastCall.think.toLocaleString('en')+' في التفكير المخفي':'')+(lastCall.finish?' — سبب التوقف: '+lastCall.finish:'')+')':'');e.failed=true;}else e.done=true;
+    if(!String(out||'').trim()){e.content=EMPTY_FINAL+(lastCall.out?'\n\n(استهلك '+lastCall.out.toLocaleString('en')+' رمزاً'+(lastCall.think?'، منها '+lastCall.think.toLocaleString('en')+' في التفكير المخفي':'')+(lastCall.finish?' — سبب التوقف: '+lastCall.finish:'')+')':'');e.failed=true;}else if(lastCall.finish==='length'||fencesOpen(out)){e.cut=true;toast('وصلت الخلاصة للحد قبل أن تكتمل. اضغط «↻ أكمل إلى الخلاصة» لإكمالها من نفس النقطة.');}
+    else e.done=true;
   }catch(err){
     if(err.name==='AbortError'&&g.silent&&!String(e.content||'').trim()){e.content=SILENT_FINAL;e.failed=true;}
     else if(err.name==='AbortError'){refresh(e);throw err;}
@@ -963,11 +964,12 @@ async function finalize(sig){
     {e.content=(e.content?e.content+'\n\n':'')+'⚠️ تعذّرت كتابة الخلاصة: '+err.message;e.failed=true;}
   }finally{g.end();refresh(e);if(e.content&&(e.done||e.failed))addFinalActions(el,e);setSpeaking('__mod',false);saveSession();}
 }
+const fencesOpen=t=>((String(t||'').match(/^[ \t]*```/gm)||[]).length%2)===1;
 function needsResume(){
   if(running||!entries.length)return false;
   let lu=-1;entries.forEach((e,i)=>{if(e.type==='user')lu=i;});
   if(lu<0)return false;
-  return !entries.slice(lu).some(e=>e.type==='final'&&e.done&&!e.failed&&String(e.content||'').trim());
+  return !entries.slice(lu).some(e=>e.type==='final'&&e.done&&!e.failed&&String(e.content||'').trim()&&!fencesOpen(e.content));
 }
 async function resumeFinal(){
   if(running)return;
@@ -996,7 +998,7 @@ async function resumeFinal(){
       }catch(err){
         if(err.name==='AbortError'&&g2.silent){fe.content=partial;toast('توقف الإكمال تلقائياً: لم يكتب رئيس الجلسة شيئاً خلال دقيقتين. جرّب نموذجاً آخر.');}
         else throw err;
-      }finally{g2.end();setSpeaking('__mod',false);refresh(fe);const el=elMap.get(fe);if(el&&fe.done)addFinalActions(el,fe);saveSession();}
+      }finally{g2.end();setSpeaking('__mod',false);refresh(fe);const el=elMap.get(fe);if(el&&fe.done){el.querySelectorAll('.actions,.readyrow').forEach(x=>x.remove());addFinalActions(el,fe);}saveSession();}
     }else{
       if(fe){const i=entries.indexOf(fe);entries.splice(i,1);const d=entries[i-1];if(d&&d.type==='round'&&d.content==='الخلاصة')entries.splice(i-1,1);}
       while(entries.length&&entries[entries.length-1].type==='error')entries.pop();
