@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes">
-<title>المختبر</title>
+<title>Pentara AI | المختبر</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
@@ -66,6 +66,11 @@ body.resizing{cursor:col-resize;user-select:none}
 .pi.on{background:var(--accent-soft)}
 .pmain{flex:1;min-width:0;border:none;background:none;text-align:start;padding:7px 8px;color:var(--ink)}
 .pmain b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rdy{display:inline-block;font-size:10.5px;font-weight:600;border-radius:999px;padding:0 6px;margin-inline-start:4px;vertical-align:1px}
+.rdy.l1{background:#eceae3;color:#4e556b}.rdy.l2{background:#e6ecf8;color:#2f4f9e}.rdy.l3{background:#fbeed6;color:#7a4c00}.rdy.l4{background:#e2f2ea;color:#1f6b4a}
+.readyrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--muted)}
+.readyrow .st{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 9px;border:1px solid var(--line)}
+.readyrow .st.on{background:var(--accent-soft);color:var(--ink);border-color:transparent;font-weight:600}
 .pmain small{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pact{display:flex;gap:2px;opacity:0;transition:opacity .15s}
 .pi:hover .pact,.pi.on .pact,.pi:focus-within .pact{opacity:1}
@@ -302,7 +307,7 @@ body:not(.owner) [data-owner]{display:none!important}
 <div class="app">
   <header>
     <button class="btn" id="sbToggle" title="إظهار/إخفاء المحفوظات" aria-label="المحفوظات">☰</button>
-    <h1><span class="logo">◯</span><span class="tt">المختبر</span></h1>
+    <h1><span class="logo">◯</span><span class="tt">Pentara AI · المختبر</span></h1>
     <div class="status" id="status"><span class="dot"></span><span id="statusText">جاهز</span></div>
     <div class="hbtns">
       <button class="btn danger" id="stopBtn" hidden>■ <span class="t">إيقاف</span></button>
@@ -362,11 +367,11 @@ body:not(.owner) [data-owner]{display:none!important}
           <button class="btn sm" id="testKey" type="button">اختبار</button>
         </div>
       </label>
-      <div class="small" id="keyMsg">يُحفظ المفتاح في متصفحك فقط، والطلبات تذهب مباشرة إلى OpenRouter.</div>
+      <div class="small" id="keyMsg">⚠️ نسخة محلية للتجربة: يُحفظ المفتاح في تخزين المتصفح (غير آمن للنشر العام). استخدم مفتاحاً محدود الرصيد، ولا تشارك هذه الصفحة أو تنشرها بمفاتيح. الطلبات تذهب مباشرة إلى OpenRouter.</div>
     </fieldset>
 
     <fieldset>
-      <legend>GitHub (لحفظ الكود وبناء تطبيقات Flutter)</legend>
+      <legend>GitHub (لحفظ الكود وبناء تطبيقات Flutter) — تجريبي</legend>
       <div class="row">
         <label class="f">المستودع<input type="text" id="sGhRepo" class="ltr" placeholder="username/my-app"></label>
         <label class="f">الفرع (اختياري)<input type="text" id="sGhBranch" class="ltr" placeholder="main"></label>
@@ -377,7 +382,7 @@ body:not(.owner) [data-owner]{display:none!important}
           <button class="btn sm" id="testGh" type="button">اختبار</button>
         </div>
       </label>
-      <div class="small" id="ghMsg">أنشئ المفتاح من GitHub › Settings › Developer settings › Fine-grained tokens، لهذا المستودع فقط، بصلاحيات: Contents (قراءة وكتابة)، Workflows (قراءة وكتابة)، Actions (قراءة). يُحفظ في متصفحك فقط.</div>
+      <div class="small" id="ghMsg">أنشئ المفتاح من GitHub › Settings › Developer settings › Fine-grained tokens، لهذا المستودع فقط، بصلاحيات: Contents (قراءة وكتابة)، Workflows (قراءة وكتابة)، Actions (قراءة). يُحفظ في متصفحك فقط، وليس في خادم آمن. لا تستخدم رمزاً واسع الصلاحيات ولا تنشر هذه النسخة كما هي.</div>
     </fieldset>
 
     <fieldset data-owner>
@@ -448,7 +453,7 @@ body:not(.owner) [data-owner]{display:none!important}
     <label class="f">البريد الإلكتروني<input type="email" id="authEmail" class="ltr" autocomplete="email" placeholder="name@example.com"></label>
     <div class="err2" id="authErr"></div>
     <button class="btn primary" id="authCreate" style="justify-content:center;padding:10px">إنشاء حساب والدخول</button>
-    <p class="small">الحسابات حالياً محفوظة على هذا الجهاز فقط، وستنتقل إلى خادم المنصة عند الإطلاق.</p>
+    <p class="small">⚠️ الحسابات هنا ملفات تعريف محلية دون كلمة مرور أو تحقق من الهوية، ولا توفر عزلاً أمنياً بين المستخدمين. للاستخدام الشخصي فقط؛ يلزم نظام مصادقة خادمي قبل مشاركة التطبيق.</p>
   </div>
 </div>
 <dialog id="fsDlg">
@@ -699,6 +704,26 @@ function streamInto(e){
   return full=>{e.content=full;if(pending)return;pending=true;
     requestAnimationFrame(()=>{pending=false;refresh(e);scrollDown(true);});};
 }
+const READY=['','مُولَّد','مُراجَع','مُختبَر','موثَّق'];
+const READY_TIP=['','كتب رئيس الجلسة الناتج، ولم يُتحقق منه بعد','اجتاز تدقيق فلتر الإجماع','نجح بناؤه آلياً في GitHub','جرّبه صاحب المشروع وأكّد أنه يعمل'];
+function readiness(p){
+  let lu=-1;p.entries.forEach((x,i)=>{if(x.type==='user')lu=i;});
+  const tail=p.entries.slice(lu+1);
+  if(!tail.some(x=>x.type==='final'&&x.done&&!x.failed&&String(x.content||'').trim()))return 0;
+  if(p.verified)return 4;
+  if(p.tested)return 3;
+  if(tail.some(x=>x.type==='note'&&/فلتر الإجماع/.test(x.content||'')))return 2;
+  return 1;
+}
+function readyBadge(p){const l=readiness(p);return l?`<span class="rdy l${l}" title="${READY_TIP[l]}">${READY[l]}</span>`:'';}
+function renderReadyRows(){
+  const l=readiness(cur);
+  document.querySelectorAll('#feed .readyrow').forEach(r=>{
+    r.innerHTML='<span>الجاهزية:</span>'+[1,2,3,4].map(i=>{const on=i===3?!!cur.tested:i<=l;return `<span class="st${on?' on':''}" title="${READY_TIP[i]}">${on?'●':'○'} ${READY[i]}</span>`;}).join('')+
+      `<button class="btn sm" type="button" data-verify>${cur.verified?'↺ إلغاء التأكيد':'✔ جرّبته ويعمل'}</button>`;
+    r.querySelector('[data-verify]').onclick=()=>{cur.verified=!cur.verified;saveSession();renderReadyRows();renderProjects();toast(cur.verified?'تم: المشروع موثَّق':'أُلغي التأكيد');};
+  });
+}
 function addFinalActions(el,e){
   const bubble=el.querySelector('.bubble');if(bubble.querySelector('.actions'))return;
   const act=document.createElement('div');act.className='actions';
@@ -718,6 +743,7 @@ function addFinalActions(el,e){
   const cp=document.createElement('button');cp.className='btn sm';cp.textContent='نسخ الخلاصة';
   cp.onclick=async()=>{try{await navigator.clipboard.writeText(e.content);toast('تم النسخ')}catch(err){toast('تعذّر النسخ')}};
   act.appendChild(cp);bubble.appendChild(act);
+  if(e.done&&!e.failed){const rr=document.createElement('div');rr.className='readyrow';rr.title='اتفاق النماذج لا يعني أن الناتج جاهز للاستخدام';bubble.appendChild(rr);renderReadyRows();}
 }
 function renderAll(){
   const f=$('#feed');f.innerHTML='';elMap.clear();
@@ -904,6 +930,7 @@ async function finalize(sig){
   try{
     const out=await ask({model:cfg.moderator.model,signal:g.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g.got();sd(t);},onReason:thinkInto(e),system:modSystem(),
       user:transcriptText()+'\n\n---\n'+finalPrompt()});
+    if(String(out||'').trim()){cur.tested=false;cur.verified=false;}
     if(!String(out||'').trim()){e.content=EMPTY_FINAL+(lastCall.out?'\n\n(استهلك '+lastCall.out.toLocaleString('en')+' رمزاً'+(lastCall.think?'، منها '+lastCall.think.toLocaleString('en')+' في التفكير المخفي':'')+(lastCall.finish?' — سبب التوقف: '+lastCall.finish:'')+')':'');e.failed=true;}else e.done=true;
   }catch(err){
     if(err.name==='AbortError'&&g.silent&&!String(e.content||'').trim()){e.content=SILENT_FINAL;e.failed=true;}
@@ -941,7 +968,7 @@ async function resumeFinal(){
       try{
         await ask({model:cfg.moderator.model,signal:g2.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g2.got();onD(partial+t);},onReason:thinkInto(fe),system:modSystem(),
           user:tx+'\n\n---\n'+finalPrompt()+'\n\n---\nملاحظة مهمة: كنت تكتب هذه الخلاصة وانقطعت الكتابة. هذه نهاية ما كتبته حتى الآن:\n<<<\n'+partial.slice(-8000)+'\n>>>\nأكمل الكتابة من النقطة التي توقفت عندها بالضبط، ولا تكرر أي جزء مكتوب، ولا تكتب أي مقدمة أو تعليق. إذا توقفت داخل كتلة كود فأكمل الكود مباشرة من نفس السطر.'});
-        fe.done=true;
+        fe.done=true;cur.tested=false;cur.verified=false;
       }catch(err){
         if(err.name==='AbortError'&&g2.silent){fe.content=partial;toast('توقف الإكمال تلقائياً: لم يكتب رئيس الجلسة شيئاً خلال دقيقتين. جرّب نموذجاً آخر.');}
         else throw err;
@@ -1073,7 +1100,7 @@ function renderProjects(){
     const n=p.entries.filter(e=>e.type==='member'||e.type==='final').length;
     const done=p.entries.some(e=>e.type==='final'&&e.done&&!e.failed);
     const row=document.createElement('div');row.className='pi'+(p===cur?' on':'');
-    row.innerHTML=`<button class="pmain" title="${esc(p.name)}"><b>${esc(p.name)}</b><small>${fmtDate(p.updated)} · ${n?n+' رد':'فارغ'}${done?' · ✓ خلاصة':''} · ${esc(OUT_LABEL[p.outType||'auto'])}</small></button><span class="pact"><button title="تصدير المشروع لنقله لجهاز آخر">⤓</button><button title="إعادة تسمية">✎</button><button title="حذف">🗑</button></span>`;
+    row.innerHTML=`<button class="pmain" title="${esc(p.name)}"><b>${esc(p.name)}${readyBadge(p)}</b><small>${fmtDate(p.updated)} · ${n?n+' رد':'فارغ'}${done?' · ✓ خلاصة':''} · ${esc(OUT_LABEL[p.outType||'auto'])}</small></button><span class="pact"><button title="تصدير المشروع لنقله لجهاز آخر">⤓</button><button title="إعادة تسمية">✎</button><button title="حذف">🗑</button></span>`;
     const [exp,ren,del]=row.querySelectorAll('.pact button');
     row.querySelector('.pmain').onclick=()=>{if(p!==cur)switchProject(p.id);closeDrawer();};
     exp.onclick=()=>exportProject(p);ren.onclick=()=>renameProject(p);del.onclick=()=>deleteProject(p);
@@ -1277,7 +1304,7 @@ async function ghBuildStatus(btn){
     if(!run){addEntry({type:'sys',content:'لا يوجد أي تشغيل بناء بعد في المستودع.'});return;}
     const st={queued:'في الانتظار',in_progress:'قيد التنفيذ',completed:'اكتمل'}[run.status]||run.status;
     if(run.status!=='completed'){addEntry({type:'sys',content:'🔄 **حالة البناء:** '+st+'. [فتح التشغيل]('+run.html_url+')'});return;}
-    if(run.conclusion==='success'){addEntry({type:'sys',content:'✅ **نجح البناء.** حمّل ملف APK من قسم Artifacts في [صفحة التشغيل]('+run.html_url+').'});return;}
+    if(run.conclusion==='success'){cur.tested=true;saveSession();renderProjects();setTimeout(renderReadyRows,50);addEntry({type:'sys',content:'✅ **نجح البناء.** حمّل ملف APK من قسم Artifacts في [صفحة التشغيل]('+run.html_url+').'});return;}
     const jobs=await gh(R+'/actions/runs/'+run.id+'/jobs');
     const errs=[];
     for(const j of (jobs.jobs||[]).filter(j=>j.conclusion==='failure')){
@@ -1304,11 +1331,12 @@ function addUsage(u){if(!u)return;stats.calls++;stats.tin+=u.prompt_tokens||0;st
 const fmtCost=c=>'$'+(+c||0).toFixed(3);
 function fmtDur(ms){const s=Math.round((ms||0)/1000);const m=Math.floor(s/60);return m?m+' د '+(s%60)+' ث':s+' ث';}
 function fmtDate(d){try{return new Date(d).toLocaleString('ar',{calendar:'gregory',numberingSystem:'latn',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return d}}
-const scoreOf=e=>e.checks.filter(Boolean).length;
-const pctOf=e=>e.checks.length?scoreOf(e)/e.checks.length*100:0;
+const scoreOf=e=>(Array.isArray(e.checks)?e.checks:[]).filter(Boolean).length;
+const pctOf=e=>Array.isArray(e.checks)&&e.checks.length?scoreOf(e)/e.checks.length*100:0;
 const pillCls=p=>p>=80?'pill':p>=60?'pill mid':'pill low';
 const myEvals=()=>isOwner()?evals:evals.filter(e=>account&&e.acct===account.id);
 const USE_LABEL={yes:'نعم، كما هي',edit:'نعم، بعد تعديلات',no:'لا'};
+const VERIFY_LABEL={not_run:'لم يُختبر عملياً',tested_failed:'نُفذت اختبارات وفشلت',tested_passed:'نجح اختبار محلي (بتوثيق)',independent:'تحقق مستقل موثق',not_applicable:'لا ينطبق (مخرج غير برمجي)'};
 function sessionSnapshot(){
   return {cost:stats.cost,ms:stats.ms,calls:stats.calls,tokens:stats.tin+stats.tout,
     rounds:entries.filter(e=>e.type==='round'&&e.content!=='الخلاصة'&&!String(e.content).startsWith('جولة التصحيح')).length,
@@ -1348,13 +1376,14 @@ function renderLabList(){
 function renderLab(){
   renderLabList();
   const m=$('#labMain');
-  const tabs=`<div class="tabs"><button class="btn sm tab${labView==='new'?' on':''}" data-v="new">＋ تقييم جديد</button><button class="btn sm tab${labView==='analysis'?' on':''}" data-v="analysis">📊 تحليل النتائج</button>${myEvals().length?'<button class="btn sm" id="csvBtn" style="margin-inline-start:auto">تصدير CSV</button>':''}</div>`;
+  const tabs=`<div class="tabs"><button class="btn sm tab${labView==='new'?' on':''}" data-v="new">＋ تقييم جديد</button><button class="btn sm tab${labView==='analysis'?' on':''}" data-v="analysis">📊 تحليل النتائج</button>${myEvals().length?'<button class="btn sm" id="csvBtn" style="margin-inline-start:auto">تصدير CSV</button><button class="btn sm" id="evalBackupBtn" title="نسخة احتياطية من تقييمات هذا الحساب فقط، بدون مفاتيح API">نسخة JSON للتقييمات</button>':''}</div>`;
   if(labView==='new')m.innerHTML=tabs+newEvalHTML();
   else if(labView==='analysis')m.innerHTML=tabs+analysisHTML();
   else m.innerHTML=tabs+detailHTML();
   m.scrollTop=0;
   m.querySelectorAll('.tab').forEach(t=>t.onclick=()=>openLab(t.dataset.v));
   const csv=m.querySelector('#csvBtn');if(csv)csv.onclick=exportCSV;
+  const backup=m.querySelector('#evalBackupBtn');if(backup)backup.onclick=exportEvalsJSON;
   if(labView==='new')wireNewEval();
   if(labView==='detail'){const d=m.querySelector('#delEval');if(d)d.onclick=()=>{if(!confirm('حذف هذه النتيجة؟'))return;evals=evals.filter(x=>x.id!==labSel);saveEvals();renderMini();openLab('analysis');};}
 }
@@ -1368,6 +1397,10 @@ function newEvalHTML(){
   <div class="card"><h4>معايير التقييم</h4>
     <label class="f" style="margin-bottom:12px">تسمية التقييم<input type="text" id="evName" value="${esc(cur.name)}" placeholder="مثال: داشبورد مبيعات، 3 جولات"></label>
     <div class="checks">${CRITERIA.map((c,i)=>`<label><input type="checkbox" data-i="${i}"> ${esc(c)}</label>`).join('')}</div>
+    <label class="f" style="margin-bottom:12px">التحقق من المنتج النهائي (مستقل عن درجة النقاش)
+      <select id="evVerified">${Object.entries(VERIFY_LABEL).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('')}</select>
+    </label>
+    <div class="small" style="margin-bottom:12px">درجة 10/10 تعني تقييمك لعناصر الجلسة، ولا تثبت نجاح بناء التطبيق أو اختبارات الكود. اختر مستوى تحقق موثقاً فقط.</div>
     <label class="f">ملاحظات (اختياري)<textarea id="evNote" rows="2" placeholder="ما الذي لاحظته في هذه الجلسة؟ ما الذي ينقص؟"></textarea></label>
     <div style="display:flex;align-items:center;gap:10px;margin-top:12px"><span>الدرجة: <b id="evScore">0/${CRITERIA.length}</b></span><button class="btn primary" id="evSave" style="margin-inline-start:auto">حفظ التقييم</button></div>
   </div>`;
@@ -1383,7 +1416,7 @@ function wireNewEval(){
   $('#evSave').onclick=()=>{
     const name=$('#evName').value.trim();if(!name){toast('اكتب تسمية للتقييم');$('#evName').focus();return;}
     if(!stars){toast('اختر التقييم العام بالنجوم');return;}
-    const e={id:Date.now(),name,date:new Date().toISOString(),acct:account?account.id:null,stars,use:$('#evUse').value,checks:boxes.map(b=>b.checked),note:$('#evNote').value.trim(),stats:sessionSnapshot()};
+    const e={id:Date.now(),name,date:new Date().toISOString(),acct:account?account.id:null,stars,use:$('#evUse').value,verification:$('#evVerified').value,checks:boxes.map(b=>b.checked),note:$('#evNote').value.trim(),stats:sessionSnapshot()};
     evals.push(e);saveEvals();toast('تم حفظ التقييم');openLab('analysis');
   };
 }
@@ -1392,6 +1425,7 @@ function detailHTML(){
   const e=evals.find(x=>x.id===labSel);if(!e)return '<div class="empty">التقييم غير موجود.</div>';
   const n=scoreOf(e);
   return `<div class="card"><h4 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">${esc(e.name)} <span class="${pillCls(pctOf(e))}">${n}/${e.checks.length}</span><span style="color:#e0a800">${starsTxt(e.stars)}</span><span class="small" style="margin-inline-start:auto">${fmtDate(e.date)}</span></h4>
+    <div class="small" style="margin-bottom:6px">التحقق التنفيذي: <b>${esc(VERIFY_LABEL[e.verification]||'غير مسجل (تقييم سابق)')}</b></div>
     ${e.use?`<div class="small" style="margin-bottom:6px">استخدام النتيجة: <b>${esc(USE_LABEL[e.use]||e.use)}</b></div>`:''}
     ${CRITERIA.slice(0,e.checks.length).map((c,i)=>`<div style="padding:4px 0;font-size:14px">${e.checks[i]?'<span class="ok">✓</span>':'<span class="bad">✕</span>'} ${esc(c)}</div>`).join('')}
     ${e.note?`<div class="insight" style="margin:10px 0 0">${esc(e.note)}</div>`:''}</div>
@@ -1418,7 +1452,7 @@ function analysisHTML(){
     <div class="kpi"><small>متوسط التكلفة</small><b>${fmtCost(avgCost)}</b></div>
     <div class="kpi"><small>متوسط المدة</small><b>${fmtDur(avgMs)}</b></div>
   </div>
-  <div class="insight">${N<3?'التقييمات قليلة؛ الأنماط تصبح أوضح بعد 3 تقييمات أو أكثر. ':''}أقوى معيار: <b>${esc(sorted.at(-1).c)}</b> (${Math.round(sorted.at(-1).r*100)}%) · أضعف معيار: <b>${esc(sorted[0].c)}</b> (${Math.round(sorted[0].r*100)}%) · أفضل جلسة: <b>${esc(best.name)}</b> (${Math.round(pctOf(best))}%${best.stars?' · '+best.stars+'★':''} بتكلفة ${fmtCost(best.stats.cost)})</div>
+  <div class="insight">درجات التقييم ذاتية، ولا تعني تحققاً تنفيذياً تلقائياً. راجع حالة التحقق بكل تقييم. ${N<3?'التقييمات قليلة؛ الأنماط تصبح أوضح بعد 3 تقييمات أو أكثر. ':''}أقوى معيار: <b>${esc(sorted.at(-1).c)}</b> (${Math.round(sorted.at(-1).r*100)}%) · أضعف معيار: <b>${esc(sorted[0].c)}</b> (${Math.round(sorted[0].r*100)}%) · أفضل جلسة: <b>${esc(best.name)}</b> (${Math.round(pctOf(best))}%${best.stars?' · '+best.stars+'★':''} بتكلفة ${fmtCost(best.stats.cost)})</div>
   <div class="card"><h4>نسبة تحقق كل معيار</h4>${rates.map(x=>`<div class="hbar"><span>${esc(x.c)}</span><div class="tr"><div class="fl" style="width:${x.r*100}%"></div></div><span class="pc">${Math.round(x.r*100)}%</span></div>`).join('')}</div>
   <div class="card"><h4>درجة كل جلسة${N>12?' (آخر 12)':''}</h4><div class="vbars">${last.map(e=>{const p=pctOf(e);return `<div class="vb" title="${esc(e.name)}"><span class="v">${Math.round(p)}%</span><div class="bar" style="height:${p/100*130}px;opacity:${p>=80?1:p>=60?.75:.5}"></div><span class="n">${esc(e.name)}</span><span>${e.stars?e.stars+'★ · ':''}${fmtCost(e.stats.cost)}</span></div>`}).join('')}</div></div>
   <div class="card" data-owner><h4>المقارنة حسب نموذج رئيس الجلسة</h4><table class="tbl"><tr><th>النموذج</th><th>تقييمات</th><th>متوسط الدرجة</th><th>النجوم</th><th>متوسط التكلفة</th><th>متوسط المدة</th></tr>
@@ -1426,16 +1460,23 @@ function analysisHTML(){
 }
 function renderMini(){
   const w=$('#evalMini');if(!w)return;
-  if(!evals.length){w.innerHTML='<div class="small">لا توجد نتائج بعد. استخدم زر 🧪 مختبر التقييم بعد أي جلسة.</div>';return;}
-  w.innerHTML='';[...evals].reverse().slice(0,6).forEach(e=>{
+  const visible=myEvals();
+  if(!visible.length){w.innerHTML='<div class="small">لا توجد نتائج بعد. استخدم زر ⭐ التقييم بعد أي جلسة.</div>';return;}
+  w.innerHTML='';[...visible].reverse().slice(0,6).forEach(e=>{
     const n=scoreOf(e);const b=document.createElement('button');b.className='ev';
     b.innerHTML=`<div class="tx"><b>${esc(e.name)}</b><small>${fmtDate(e.date)} · ${fmtCost(e.stats.cost)}</small></div><span class="${pillCls(pctOf(e))}">${n}/${e.checks.length}</span>`;
     b.onclick=()=>openLab('detail',e.id);w.appendChild(b);});
 }
+function exportEvalsJSON(){
+  const list=myEvals().map(e=>({id:e.id,name:e.name,date:e.date,stars:e.stars,use:e.use,verification:e.verification||'not_run',checks:e.checks,note:e.note,stats:e.stats}));
+  const payload={app:'Pentara AI',kind:'evaluation-backup',schemaVersion:1,createdAt:new Date().toISOString(),evaluations:list};
+  download('pentara-evaluations-backup.json',JSON.stringify(payload,null,2),'application/json');
+  toast('حُفظت نسخة من تقييمات الحساب بدون مفاتيح أو محاضر. احتفظ بها في مكان آمن.');
+}
 function exportCSV(){
-  const head=['التسمية','التاريخ','النجوم','استخدام النتيجة',...CRITERIA,'الدرجة %','التكلفة $','المدة (ث)','الجولات','رئيس الجلسة','ملاحظات'];
-  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
-  const rows=myEvals().map(e=>[e.name,e.date,e.stars||'',USE_LABEL[e.use]||'',...CRITERIA.map((c,i)=>i<e.checks.length?(e.checks[i]?1:0):''),Math.round(pctOf(e)),(e.stats.cost||0).toFixed(4),Math.round((e.stats.ms||0)/1000),e.stats.rounds,isOwner()?e.stats.moderator:'',e.note].map(q).join(','));
+  const head=['التسمية','التاريخ','النجوم','استخدام النتيجة','حالة التحقق التنفيذي',...CRITERIA,'الدرجة %','التكلفة $','المدة (ث)','الجولات','رئيس الجلسة','ملاحظات'];
+  const q=v=>{let t=String(v??'');if(/^[\s\uFEFF]*[=+@\-]/.test(t))t="'"+t;return '"'+t.replace(/"/g,'""')+'"';};
+  const rows=myEvals().map(e=>[e.name,e.date,e.stars||'',USE_LABEL[e.use]||'',VERIFY_LABEL[e.verification]||'غير مسجل',...CRITERIA.map((c,i)=>i<e.checks.length?(e.checks[i]?1:0):''),Math.round(pctOf(e)),(e.stats.cost||0).toFixed(4),Math.round((e.stats.ms||0)/1000),e.stats.rounds,isOwner()?e.stats.moderator:'',e.note].map(q).join(','));
   download('نتائج-التقييم.csv','﻿'+[head.map(q).join(','),...rows].join('\n'),'text/csv');
 }
 
@@ -1578,7 +1619,8 @@ const GUIDE=[
   ['↻','أكمل إلى الخلاصة','يظهر عند انقطاع جلسة: يكتب الخلاصة فقط بدون إعادة النقاش.'],
   ['⬆','حفظ في GitHub','تحت الخلاصة: يرفع الملفات للمستودع ويبدأ البناء.'],
   ['⬇','تنزيل الملفات ZIP','تحت الخلاصة: ملفات المشروع مضغوطة.'],
-  ['🔄','حالة البناء','تحت الخلاصة: نتيجة بناء التطبيق في GitHub.']
+  ['🔄','حالة البناء','تحت الخلاصة: نتيجة بناء التطبيق في GitHub.'],
+  ['●','مستوى الجاهزية','تحت الخلاصة وبجانب اسم المشروع: مُولَّد (كتبه رئيس الجلسة) ← مُراجَع (اجتاز فلتر الإجماع) ← مُختبَر (نجح بناؤه في GitHub) ← موثَّق (جرّبته بنفسك وضغطت «جرّبته ويعمل»). اتفاق النماذج وحده لا يعني أن الناتج جاهز.']
 ];
 function guideHTML(){return '<div class="guide">'+GUIDE.map(g=>`<div${g[3]?' data-owner':''}><b class="ic">${g[0]}</b><span><strong>${g[1]}</strong>: ${g[2]}</span></div>`).join('')+'</div>';}
 
