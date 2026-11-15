@@ -118,7 +118,21 @@ mark.hit.cur{background:#f59e0b;color:#111}
 .guide b.ic{min-width:26px;height:26px;border-radius:7px;background:var(--panel-2);border:1px solid var(--line);display:grid;place-items:center;font-size:14px;flex:none}
 .guide span{color:var(--muted);line-height:1.5}.guide span strong{color:var(--ink);font-weight:600}
 .welcome .gh{margin:26px 0 0;font-size:14px;font-weight:700}
-#helpDlg{width:min(760px,calc(100vw - 24px))}
+#helpDlg{width:min(780px,calc(100vw - 24px))}
+.fswrap{position:relative;display:inline-flex}
+#fsMenu{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);z-index:30;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:6px;display:flex;flex-direction:column;gap:2px;min-width:86px}
+#fsMenu[hidden]{display:none}
+#fsMenu .fsh{font-size:11.5px;color:var(--muted);text-align:center;padding:2px 0 6px;border-bottom:1px solid var(--line);margin-bottom:4px}
+#fsMenu button{border:0;background:transparent;color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+#fsMenu button:hover{background:var(--panel-2)}
+#fsMenu button.on{background:var(--accent-soft);font-weight:600}
+#fsMenu button small{color:var(--muted);font-size:11px}
+.help h4{margin:18px 0 8px;font-size:15.5px}
+.help h4:first-child{margin-top:0}
+.help ol,.help ul{margin:0;padding-inline-start:20px;line-height:1.85;font-size:14px}
+.help .tip{background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.75;margin-top:8px}
+.help .htabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.help .htabs button.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .chip{border:1px solid var(--line);background:var(--panel);padding:8px 12px;border-radius:999px;font-size:13px;color:var(--ink);text-align:start}
 .chip:hover{border-color:var(--accent)}
@@ -152,9 +166,14 @@ mark.hit.cur{background:#f59e0b;color:#111}
 .typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:pulse 1s infinite}
 .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
 .composer{border-top:1px solid var(--line);background:var(--panel);padding:12px 18px;position:relative}
-#compResizer{position:absolute;top:-5px;left:0;right:0;height:10px;cursor:row-resize;touch-action:none;z-index:2}
-#compResizer::after{content:"";position:absolute;left:50%;top:3px;width:46px;height:4px;margin-left:-23px;border-radius:4px;background:var(--line);transition:background .15s}
-#compResizer:hover::after,#compResizer.drag::after{background:var(--accent)}
+#compResizer{position:absolute;top:-9px;left:0;right:0;height:18px;cursor:ns-resize;touch-action:none;z-index:3;outline:none}
+#compResizer::before{content:attr(data-tip);position:absolute;left:50%;top:-26px;transform:translateX(-50%);font-size:11.5px;white-space:nowrap;background:var(--ink);color:var(--bg);padding:3px 10px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .15s}
+#compResizer:hover::before,#compResizer.drag::before,#compResizer:focus-visible::before{opacity:.92}
+#compResizer::after{content:"";position:absolute;left:50%;top:6px;width:56px;height:6px;margin-left:-28px;border-radius:999px;background:var(--line);box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);transition:background .15s,width .15s,margin .15s}
+#compResizer:hover::after,#compResizer.drag::after,#compResizer:focus-visible::after{background:var(--accent);width:72px;margin-left:-36px}
+body.cdrag,body.cdrag *{cursor:ns-resize!important;user-select:none!important}
+.cbox textarea{transition:height .12s ease-out}
+body.cdrag .cbox textarea{transition:none}
 #fsDlg{width:min(320px,calc(100vw - 24px))}
 .fsgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .fsgrid button{border:1px solid var(--line);background:var(--panel-2);color:var(--ink);border-radius:10px;padding:10px 0;font-weight:600}
@@ -318,9 +337,9 @@ body:not(.owner) [data-owner]{display:none!important}
       <button class="btn" id="labBtn" title="تقييم الجلسات">⭐ <span class="t">التقييم</span></button>
       <button class="btn" id="exportBtn" title="تصدير المحضر كنص للقراءة (.md) — لا يُستورد">⤓ <span class="t">المحضر</span></button>
       <button class="btn" id="findBtn" title="بحث داخل المحادثة (Ctrl+F)">🔍</button>
-      <button class="btn" id="helpBtn" title="دليل الأيقونات">؟</button>
+      <button class="btn" id="helpBtn" title="التعليمات ودليل الأيقونات">؟ <span class="t">تعليمات</span></button>
       <button class="btn" id="themeBtn" title="الوضع الليلي / النهاري">🌙</button>
-      <button class="btn" id="fsBtn" title="حجم الخط">Aa</button>
+      <span class="fswrap"><button class="btn" id="fsBtn" title="حجم الخط" aria-haspopup="listbox" aria-expanded="false">Aa</button><div id="fsMenu" role="listbox" aria-label="حجم الخط" hidden></div></span>
       <button class="btn" id="newBtn" title="مشروع جديد">＋ <span class="t">مشروع جديد</span></button>
       <button class="btn" id="settingsBtn">⚙ <span class="t">الإعدادات</span></button>
       <button class="btn" id="acctBtn" title="حسابي"><span class="aav" id="acctAv">؟</span><span class="t" id="acctName"></span></button>
@@ -338,7 +357,7 @@ body:not(.owner) [data-owner]{display:none!important}
       <div id="feed"></div>
       <button id="toBottom" class="off" type="button" title="النزول لآخر النقاش" aria-label="النزول لآخر النقاش">↓</button>
       <div class="composer">
-        <div id="compResizer" title="اسحب لتكبير منطقة الكتابة أو تصغيرها · نقرتان للحجم الافتراضي"></div>
+        <div id="compResizer" role="separator" aria-orientation="horizontal" aria-label="تغيير ارتفاع مربع الكتابة" tabindex="0" data-tip="اسحب للأعلى لتكبير مربع الكتابة · نقرتان للحجم الأصلي"></div>
         <div class="toolbar">
           <span class="small">المشروع:</span><span class="curproj" id="curProj"></span>
           <span class="sp"></span>
@@ -465,7 +484,7 @@ body:not(.owner) [data-owner]{display:none!important}
   <div class="dbody"><div class="fsgrid" id="fsGrid"></div><div class="small">يتغير حجم النصوص والقوائم والكتابة في الصفحة كلها. الافتراضي 15.</div></div>
 </dialog>
 <dialog id="helpDlg">
-  <div class="dhead"><h3>دليل الأيقونات</h3><button class="btn sm" data-close>✕</button></div>
+  <div class="dhead"><h3>التعليمات</h3><button class="btn sm" data-close>✕</button></div>
   <div class="dbody" id="helpBody"></div>
 </dialog>
 <dialog id="acctDlg">
@@ -1730,15 +1749,26 @@ async function greetUser(){
 
 /* ---------- wiring ---------- */
 $('#labBtn').onclick=()=>openLab('new');
-$('#fsBtn').onclick=()=>{let cur=15;try{cur=JSON.parse(localStorage.getItem('rt_fs')||'15');}catch(e){}
-  const g=$('#fsGrid');g.innerHTML='';for(let n=18;n>=10;n--){const b=document.createElement('button');b.type='button';b.textContent=n;if(n===+cur)b.className='on';b.onclick=()=>{applyFs(n);try{localStorage.setItem('rt_fs',JSON.stringify(n));}catch(e){}g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));};g.appendChild(b);}
-  $('#fsDlg').showModal();};
-(function(){const h=$('#compResizer');let drag=false,y0=0,h0=0;
-  h.addEventListener('pointerdown',e=>{drag=true;y0=e.clientY;h0=$('#input').offsetHeight;h.setPointerCapture(e.pointerId);h.classList.add('drag');e.preventDefault();});
-  h.addEventListener('pointermove',e=>{if(!drag)return;const z=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--z'))||1;setComposerH(h0+(y0-e.clientY)/z,false);});
-  const end=()=>{if(!drag)return;drag=false;h.classList.remove('drag');setComposerH(+$('#input').dataset.min||46);};
+function closeFsMenu(){const m=$('#fsMenu');if(m&&!m.hidden){m.hidden=true;$('#fsBtn').setAttribute('aria-expanded','false');}}
+$('#fsBtn').onclick=e=>{e.stopPropagation();const m=$('#fsMenu');if(!m.hidden){closeFsMenu();return;}
+  let cur=15;try{cur=JSON.parse(localStorage.getItem('rt_fs')||'15');}catch(err){}
+  m.innerHTML='<div class="fsh">حجم الخط</div>';
+  for(let n=10;n<=18;n++){const b=document.createElement('button');b.type='button';b.setAttribute('role','option');b.innerHTML=n+(n===15?' <small>افتراضي</small>':'');if(n===+cur){b.className='on';b.setAttribute('aria-selected','true');}
+    b.onclick=ev=>{ev.stopPropagation();applyFs(n);try{localStorage.setItem('rt_fs',JSON.stringify(n));}catch(err){}closeFsMenu();toast('حجم الخط: '+n);};m.appendChild(b);}
+  m.hidden=false;$('#fsBtn').setAttribute('aria-expanded','true');const on=m.querySelector('.on');if(on)on.focus();};
+document.addEventListener('pointerdown',e=>{
+  if(!e.target.closest('.fswrap'))closeFsMenu();
+  const fb=$('#findBar');if(fb&&!fb.hidden&&!e.target.closest('#findBar')&&!e.target.closest('#findBtn'))closeFind();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeFsMenu();});
+(function(){const h=$('#compResizer');let drag=false,y0=0,h0=0,raf=0,last=0;
+  const zoom=()=>parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--z'))||1;
+  h.addEventListener('pointerdown',e=>{drag=true;y0=e.clientY;h0=$('#input').getBoundingClientRect().height/zoom();h.setPointerCapture(e.pointerId);h.classList.add('drag');document.body.classList.add('cdrag');e.preventDefault();});
+  h.addEventListener('pointermove',e=>{if(!drag)return;last=h0+(y0-e.clientY)/zoom();if(!raf)raf=requestAnimationFrame(()=>{raf=0;setComposerH(last,false);});});
+  const end=()=>{if(!drag)return;drag=false;h.classList.remove('drag');document.body.classList.remove('cdrag');setComposerH(+$('#input').dataset.min||46);$('#input').focus();};
   h.addEventListener('pointerup',end);h.addEventListener('pointercancel',end);
   h.addEventListener('dblclick',()=>setComposerH(46));
+  h.addEventListener('keydown',e=>{const cur=+$('#input').dataset.min||46;if(e.key==='ArrowUp'){e.preventDefault();setComposerH(cur+32);}else if(e.key==='ArrowDown'){e.preventDefault();setComposerH(cur-32);}else if(e.key==='Home'||e.key==='Escape'){e.preventDefault();setComposerH(46);}});
   let ch=46;try{ch=JSON.parse(localStorage.getItem('rt_ch')||'46');}catch(e){}setComposerH(ch,false);
 })();
 $('#themeBtn').onclick=()=>{const t=currentTheme()==='dark'?'light':'dark';applyTheme(t);store.set('rt_theme',t);};
@@ -1753,6 +1783,7 @@ function placeToBottom(){
 }
 $('#feed').addEventListener('scroll',placeToBottom,{passive:true});
 window.addEventListener('resize',placeToBottom);
+try{new ResizeObserver(()=>placeToBottom()).observe($('#feed'));}catch(e){}
 new MutationObserver(()=>requestAnimationFrame(placeToBottom)).observe($('#feed'),{childList:true,subtree:true,characterData:true});
 $('#toBottom').onclick=()=>{const f=$('#feed');f.scrollTo({top:f.scrollHeight,behavior:'smooth'});};
 setTimeout(placeToBottom,300);
@@ -1797,7 +1828,37 @@ $('#findPrev').onclick=()=>gotoFind(findIdx-1);
 $('#findClose').onclick=closeFind;
 document.addEventListener('keydown',ev=>{if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==='f'&&!document.querySelector('dialog[open]')){ev.preventDefault();openFind();}});
 
-$('#helpBtn').onclick=()=>{$('#helpBody').innerHTML=guideHTML();$('#helpDlg').showModal();};
+const HELP=[
+  {id:'start',title:'البداية',html:`<h4>كيف تعمل الطاولة</h4><ol>
+<li>اكتب فكرتك أو مهمتك في مربع الكتابة، وأرفق ما يلزم بزر ＋ (صور، PDF، Excel، ملفات).</li>
+<li>اختر <b>نوع المخرج</b>: نصوص وتحليل، صفحة، تطبيق ويب، أو تطبيق Flutter.</li>
+<li>يناقش الأعضاء الخمسة الفكرة جولة بعد جولة، ويقيّم رئيس الجلسة التوافق بعد كل جولة.</li>
+<li>يدقق <b>فلتر الإجماع</b> الحل قبل الخلاصة، ثم يكتب رئيس الجلسة إجابة واحدة موحّدة.</li>
+<li>تحت الخلاصة: تنزيل الملفات، الحفظ في GitHub، ومستوى الجاهزية.</li></ol>
+<div class="tip">تقدر تتدخل أثناء النقاش في أي وقت بكتابة ملاحظتك والضغط على «مداخلة».</div>`},
+  {id:'code',title:'بناء التطبيقات',html:`<h4>نصائح للمشاريع البرمجية الكبيرة</h4><ul>
+<li>قسّم التطبيق إلى <b>دفعات صغيرة</b> (ملفات محددة في كل رسالة) في نفس المشروع، بدل طلبه دفعة واحدة.</li>
+<li>أرفق ملف المرجع (الألوان والخطوط والشاشات) مع كل دفعة.</li>
+<li>جولتان تكفي للدفعات التنفيذية، وتفكير الأعضاء «منخفض»، وتفكير رئيس الجلسة «بدون».</li>
+<li>إذا انقطعت الخلاصة يظهر زر <b>«↻ أكمل إلى الخلاصة»</b> ويكمل من نفس السطر.</li>
+<li>بعد الحفظ في GitHub اضغط <b>«🔄 حالة البناء»</b>: عند النجاح يرتفع المستوى إلى «مُختبَر».</li></ul>
+<h4>أيقونة التطبيق واسمه</h4><ul><li>ضع ملفات الأيقونة في <code>assets/launcher</code> واسم التطبيق في <code>assets/launcher/label.txt</code>، ويطبّقها البناء تلقائياً.</li></ul>`},
+  {id:'ready',title:'الجاهزية',html:`<h4>مستويات الجاهزية</h4><ol>
+<li><b>مُولَّد</b>: كتب رئيس الجلسة الناتج.</li><li><b>مُراجَع</b>: اجتاز فلتر الإجماع.</li>
+<li><b>مُختبَر</b>: نجح بناؤه في GitHub.</li><li><b>موثَّق</b>: جرّبته بنفسك وضغطت «جرّبته ويعمل».</li></ol>
+<div class="tip">اتفاق النماذج وحده لا يعني أن الناتج جاهز للاستخدام.</div>`},
+  {id:'keys',title:'اختصارات',html:`<h4>اختصارات لوحة المفاتيح</h4><ul>
+<li><b>Enter</b> للإرسال، و<b>Shift+Enter</b> لسطر جديد.</li><li><b>Ctrl+F</b> للبحث داخل المحادثة، و<b>Esc</b> لإغلاقه.</li>
+<li>اسحب مقبض مربع الكتابة للأعلى لتكبيره، أو قف عليه بـ Tab واستخدم ↑ و↓.</li></ul>`},
+  {id:'icons',title:'دليل الأيقونات',html:()=>guideHTML()}
+];
+let helpTab='start';
+function renderHelp(){
+  const sec=HELP.find(h=>h.id===helpTab)||HELP[0];
+  $('#helpBody').innerHTML='<div class="help"><div class="htabs">'+HELP.map(h=>`<button class="btn sm${h.id===sec.id?' on':''}" type="button" data-h="${h.id}">${h.title}</button>`).join('')+'</div>'+(typeof sec.html==='function'?sec.html():sec.html)+'</div>';
+  $('#helpBody').querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{helpTab=b.dataset.h;renderHelp();});
+}
+$('#helpBtn').onclick=()=>{renderHelp();$('#helpDlg').showModal();};
 $('#resumeBtn').onclick=resumeFinal;
 $('#attachBtn').onclick=()=>{$('#attachInput').value='';$('#attachInput').click();};
 $('#attachInput').onchange=e=>{const f=[...(e.target.files||[])];if(f.length)addFiles(f);};
@@ -1812,7 +1873,7 @@ $('#authCreate').onclick=createAccount;
 $('#acctBtn').onclick=openAcct;
 $('#acctSwitch').onclick=()=>{if(running){toast('أوقف النقاش أولاً');return;}$('#acctDlg').close();showAuth();};
 function autoGrow(){const t=$('#input');const mn=+(t.dataset.min||46),mx=Math.max(180,mn);t.style.height='auto';t.style.height=Math.max(mn,Math.min(mx,t.scrollHeight))+'px';}
-function setComposerH(h,save){const t=$('#input');h=Math.round(Math.max(46,Math.min(h,window.innerHeight*0.55)));t.dataset.min=h;document.documentElement.style.setProperty('--cmax',Math.max(180,h)+'px');autoGrow();if(save!==false){try{localStorage.setItem('rt_ch',JSON.stringify(h));}catch(e){}}}
+function setComposerH(h,save){const t=$('#input');h=Math.round(Math.max(46,Math.min(h,window.innerHeight/(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--z'))||1)*0.6)));t.dataset.min=h;document.documentElement.style.setProperty('--cmax',Math.max(180,h)+'px');autoGrow();if(save!==false){try{localStorage.setItem('rt_ch',JSON.stringify(h));}catch(e){}}}
 function applyFs(n){n=Math.max(10,Math.min(18,+n||15));document.documentElement.style.setProperty('--z',(n/15).toFixed(4));const b=document.getElementById('fsBtn');if(b)b.title='حجم الخط: '+n;return n;}
 (function(){let n=15;try{n=JSON.parse(localStorage.getItem('rt_fs')||'15');}catch(e){}applyFs(n);})();
 $('#input').addEventListener('input',autoGrow);
