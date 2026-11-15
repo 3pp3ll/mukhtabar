@@ -727,13 +727,17 @@ function welcome(){
 }
 
 /* ---------- OpenRouter ---------- */
+let lastCall={};
 async function callModel({model,messages,maxTokens,effort,reasoningMax,onDelta,onReason,signal,noTrack}){
-  let rlen=0;
+  let rlen=0;lastCall={};
   const body={model,messages,max_tokens:maxTokens,temperature:cfg.temperature,stream:true};
   if(effort&&effort!=='off')body.reasoning=reasoningMax?{max_tokens:reasoningMax}:{effort};
+  else if(effort==='off')body.reasoning={enabled:false};
   body.usage={include:true};
-  const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal,
+  const go=()=>fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal,
     headers:{'Authorization':'Bearer '+cfg.apiKey,'Content-Type':'application/json','X-Title':'AI Round Table'},body:JSON.stringify(body)});
+  let res=await go();
+  if(!res.ok&&res.status===400&&body.reasoning&&body.reasoning.enabled===false){delete body.reasoning;res=await go();}
   if(!res.ok){const t=await res.text();let msg=t;try{msg=JSON.parse(t).error.message}catch(e){}throw new Error(res.status+': '+msg);}
   const reader=res.body.getReader(),dec=new TextDecoder();let buf='',full='',usage=null;
   while(true){
@@ -746,11 +750,15 @@ async function callModel({model,messages,maxTokens,effort,reasoningMax,onDelta,o
       if(j.error)throw new Error(j.error.message||'خطأ من المزوّد');
       if(j.usage)usage=j.usage;
       const dl=j.choices&&j.choices[0]&&j.choices[0].delta;
-      if(dl&&typeof dl.reasoning==='string'&&dl.reasoning){rlen+=dl.reasoning.length;onReason&&onReason(rlen);}
+      const fr=j.choices&&j.choices[0]&&j.choices[0].finish_reason;if(fr)lastCall.finish=fr;
+      let rs=dl&&typeof dl.reasoning==='string'?dl.reasoning:'';
+      if(!rs&&dl&&Array.isArray(dl.reasoning_details))rs=dl.reasoning_details.map(x=>x.text||x.summary||'').join('');
+      if(rs){rlen+=rs.length;onReason&&onReason(rlen);}
       const c=dl&&dl.content;
       if(c){full+=c;onDelta&&onDelta(full);}
     }
   }
+  if(usage){lastCall.out=usage.completion_tokens;lastCall.think=usage.completion_tokens_details&&usage.completion_tokens_details.reasoning_tokens;}
   if(!noTrack)addUsage(usage);
   return full;
 }
@@ -881,7 +889,7 @@ async function finalize(sig){
   try{
     const out=await ask({model:cfg.moderator.model,signal:g.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g.got();sd(t);},onReason:thinkInto(e),system:modSystem(),
       user:transcriptText()+'\n\n---\n'+finalPrompt()});
-    if(!String(out||'').trim()){e.content=EMPTY_FINAL;e.failed=true;}else e.done=true;
+    if(!String(out||'').trim()){e.content=EMPTY_FINAL+(lastCall.out?'\n\n(استهلك '+lastCall.out.toLocaleString('en')+' رمزاً'+(lastCall.think?'، منها '+lastCall.think.toLocaleString('en')+' في التفكير المخفي':'')+(lastCall.finish?' — سبب التوقف: '+lastCall.finish:'')+')':'');e.failed=true;}else e.done=true;
   }catch(err){
     if(err.name==='AbortError'&&g.silent&&!String(e.content||'').trim()){e.content=SILENT_FINAL;e.failed=true;}
     else if(err.name==='AbortError'){refresh(e);throw err;}
