@@ -436,6 +436,7 @@ body:not(.owner) [data-owner]{display:none!important}
         <label class="f">تفكير رئيس الجلسة<select id="sFinalEffort"><option value="off">بدون</option><option value="low">منخفض</option><option value="medium">متوسط</option><option value="high">عالٍ</option></select></label>
       </div>
       <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px"><input type="checkbox" id="sAuto"> إنهاء النقاش مبكراً عند الوصول إلى توافق</label>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:14px"><input type="checkbox" id="sAutoFinish"> الوضع التلقائي: إذا انقطعت الخلاصة يكملها المختبر بنفسه حتى آخر ملف (حتى 4 مرات)، مع تنبيه عند جاهزية كل ملف</label>
       <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:14px"><input type="checkbox" id="sAudit"> فلتر الإجماع الخاطئ: يدقّق رئيس الجلسة النتيجة قبل الخلاصة، ويفرض جولة تصحيح بطريقة يحددها إذا وجد خطأً</label>
       <label class="f" style="margin-top:8px;max-width:220px">أقصى جولات تصحيح<input type="number" id="sAuditRounds" min="1" max="3"></label>
     </fieldset>
@@ -652,7 +653,7 @@ const store={
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 };
 const DEFAULT_CFG={
-  apiKey:'',rounds:3,maxTokens:6000,finalMaxTokens:16000,temperature:0.7,effort:'low',finalEffort:'medium',gh:{token:'',repo:'',branch:''},autoStop:true,auditOn:true,auditRounds:1,autoPicked:false,
+  apiKey:'',rounds:3,maxTokens:6000,finalMaxTokens:16000,temperature:0.7,effort:'low',finalEffort:'medium',gh:{token:'',repo:'',branch:''},autoStop:true,autoFinish:true,auditOn:true,auditRounds:1,autoPicked:false,
   members:[
     {id:'claude',name:'Claude',alias:'المهندس',icon:'🏗️',model:'anthropic/claude-sonnet-5.5',color:'#d97757',on:true,
      role:'المهندس المنظّم: يركّز على البنية والوضوح وجودة التنفيذ والكود، ويرتّب الأفكار في خطة متماسكة.'},
@@ -780,8 +781,25 @@ function thinkInto(e){
 }
 function streamInto(e){
   let pending=false;
-  return full=>{e.content=full;if(pending)return;pending=true;
+  return full=>{e.content=full;if(e.type==='final')fileProgress(e);if(pending)return;pending=true;
     requestAnimationFrame(()=>{pending=false;refresh(e);scrollDown(true);});};
+}
+// تنبيه عند اكتمال كل ملف في الخلاصة: «جاهز الملف 3 من 7».
+function plannedFiles(text){
+  const m=String(text||'').match(/خطة الملفات[\s\S]*?(?=\n#{1,3} |\nFILE:)/);
+  if(!m)return 0;
+  return (m[0].match(/^\s*\d+[.)-]\s*`?[\w./-]+\.\w+/gm)||[]).length;
+}
+function fileProgress(e){
+  if(!['flutter','web','app'].includes(cur.outType))return;
+  const files=extractFiles(e.content||'');
+  const n=files.length;
+  if(n>(e.filesSeen||0)){
+    e.filesSeen=n;
+    const total=plannedFiles(e.content);
+    const last=files[n-1];
+    toast('✅ جاهز الملف '+n+(total?' من '+total:'')+': '+(last&&last.path?last.path:''));
+  }
 }
 const READY=['','مُولَّد','مُراجَع','مُختبَر','موثَّق'];
 const READY_TIP=['','كتب رئيس الجلسة الناتج، ولم يُتحقق منه بعد','اجتاز تدقيق فلتر الإجماع','نجح بناؤه آلياً في GitHub','جرّبه صاحب المشروع وأكّد أنه يعمل'];
@@ -997,7 +1015,7 @@ function finalPrompt(){
 ## نقاط الخلاف المتبقية
 (إن وُجدت: ما هي، ومن قالها، ولماذا رجّحت ما رجّحته. إن لم توجد فاذكر ذلك)
 ## الخطوات التالية
-
+${['flutter','web','app'].includes(cur.outType)?'\nتنظيم الملفات: ابدأ قسم "الحل المتفق عليه" بقائمة عنوانها "خطة الملفات" فيها كل الملفات التي ستكتبها مرقّمة بالترتيب (المسار ووظيفته في سطر)، ثم اكتب الملفات بنفس الترتيب تماماً، كل ملف كاملاً قبل الانتقال للذي بعده.\n':''}
 مهم: ${outRule()}
 إذا رفض رئيس الجلسة إجماعاً سابقاً وأدار جولة تصحيح، فابنِ الخلاصة على الطريقة المصحّحة ولا تعُد إلى الحل المرفوض، واذكر في "نقاط الخلاف المتبقية" أي خطأ لم يُحسم.
 التزم بأي طلب أو تعديل كتبه صاحب الطاولة في آخر مداخلاته، فهو مقدَّم على ما اتفق عليه الأعضاء.`;
@@ -1028,6 +1046,18 @@ function needsResume(){
   if(lu<0)return false;
   return !entries.slice(lu).some(e=>e.type==='final'&&e.done&&!e.failed&&String(e.content||'').trim()&&!fencesOpen(e.content));
 }
+let autoTries=0;
+function autoContinue(){
+  if(autoTries===99||cfg.autoFinish===false||running||!needsResume())return;
+  let fe=null;
+  for(let i=entries.length-1;i>=0;i--){const x=entries[i];if(x.type==='user')break;if(x.type==='final'){fe=x;break;}}
+  if(!fe||fe.failed||!String(fe.content||'').trim())return; // فشل حقيقي: يحتاج تدخلك
+  if(autoTries>=4){toast('أكمل المختبر الخلاصة 4 مرات وما زالت ناقصة. اضغط «أكمل إلى الخلاصة» يدوياً.');return;}
+  autoTries++;
+  const done=extractFiles(fe.content).length,total=plannedFiles(fe.content);
+  toast('↻ الوضع التلقائي: إكمال الخلاصة (محاولة '+autoTries+')'+(total?' — جاهز '+done+' من '+total+' ملفات':''));
+  setTimeout(()=>resumeFinal(),900);
+}
 async function resumeFinal(){
   if(running)return;
   if(!cfg.apiKey){openSettings();toast('أضف مفتاح OpenRouter أولاً');return;}
@@ -1051,11 +1081,12 @@ async function resumeFinal(){
       try{
         await ask({model:finalModel(),signal:g2.signal,maxTokens:finalMax(),effort:cfg.finalEffort,reasoningMax:finalThink(),onDelta:t=>{g2.got();onD(partial+t);},onReason:thinkInto(fe),system:modSystem(),
           user:tx+'\n\n---\n'+finalPrompt()+'\n\n---\nملاحظة مهمة: كنت تكتب هذه الخلاصة وانقطعت الكتابة. هذه نهاية ما كتبته حتى الآن:\n<<<\n'+partial.slice(-8000)+'\n>>>\nأكمل الكتابة من النقطة التي توقفت عندها بالضبط، ولا تكرر أي جزء مكتوب، ولا تكتب أي مقدمة أو تعليق. إذا توقفت داخل كتلة كود فأكمل الكود مباشرة من نفس السطر.'});
-        fe.done=true;cur.tested=false;cur.verified=false;
+        if(lastCall.finish==='length'||fencesOpen(fe.content)){fe.cut=true;fe.done=false;}else{fe.done=true;fe.cut=false;}
+        cur.tested=false;cur.verified=false;
       }catch(err){
         if(err.name==='AbortError'&&g2.silent){fe.content=partial;toast('توقف الإكمال تلقائياً: لم يكتب رئيس الجلسة شيئاً خلال دقيقتين. جرّب نموذجاً آخر.');}
         else throw err;
-      }finally{g2.end();setSpeaking('__mod',false);refresh(fe);const el=elMap.get(fe);if(el&&fe.done){el.querySelectorAll('.actions,.readyrow').forEach(x=>x.remove());addFinalActions(el,fe);}saveSession();}
+      }finally{g2.end();setSpeaking('__mod',false);refresh(fe);const el=elMap.get(fe);if(el&&fe.done){el.querySelectorAll('.actions,.readyrow').forEach(x=>x.remove());addFinalActions(el,fe);}if(fe.done)autoTries=0;saveSession();}
     }else{
       if(fe){const i=entries.indexOf(fe);entries.splice(i,1);const d=entries[i-1];if(d&&d.type==='round'&&d.content==='الخلاصة')entries.splice(i-1,1);}
       while(entries.length&&entries[entries.length-1].type==='error')entries.pop();
@@ -1064,12 +1095,13 @@ async function resumeFinal(){
     }
   }catch(err){
     addEntry({type:'error',content:err.name==='AbortError'?'تم إيقاف كتابة الخلاصة. يمكنك إكمالها لاحقاً بنفس الزر.':'خطأ: '+err.message});
-  }finally{stats.ms+=Date.now()-t0;saveStats();running=false;speaking.clear();abortCtl=null;setUI();updateStatus();saveSession();}
+    autoTries=99; // إيقاف يدوي أو خطأ: لا نكمل تلقائياً
+  }finally{stats.ms+=Date.now()-t0;saveStats();running=false;speaking.clear();abortCtl=null;setUI();updateStatus();saveSession();autoContinue();}
 }
 async function runCycle(){
   const active=cfg.members.filter(m=>m.on);
   if(active.length<2){toast('فعّل عضوين على الأقل من الإعدادات');return;}
-  running=true;setUI();abortCtl=new AbortController();const sig=abortCtl.signal;const t0=Date.now();
+  running=true;setUI();abortCtl=new AbortController();const sig=abortCtl.signal;const t0=Date.now();autoTries=0;
   const first=!entries.some(e=>e.type==='member');
   let focus='';
   try{
@@ -1099,7 +1131,8 @@ async function runCycle(){
     await finalize(sig);
   }catch(err){
     addEntry({type:'error',content:err.name==='AbortError'?'تم إيقاف الجلسة. يمكنك إرسال رسالة لمتابعة النقاش.':'خطأ: '+err.message});
-  }finally{stats.ms+=Date.now()-t0;saveStats();running=false;speaking.clear();abortCtl=null;setUI();updateStatus();saveSession();}
+    autoTries=99;
+  }finally{stats.ms+=Date.now()-t0;saveStats();running=false;speaking.clear();abortCtl=null;setUI();updateStatus();saveSession();if(autoTries!==99)autoContinue();}
 }
 function send(){
   const inp=$('#input');let t=inp.value.trim();
@@ -1248,14 +1281,14 @@ function openSettings(){
   draft=JSON.parse(JSON.stringify(cfg));
   $('#sKey').value=draft.apiKey;$('#sModName').value=draft.moderator.name;$('#sModModel').value=draft.moderator.model;$('#sModCode').value=draft.moderator.codeModel||'';$('#sModRole').value=draft.moderator.role||'';
   $('#sRounds').value=draft.rounds;$('#sMax').value=draft.maxTokens;$('#sFinalMax').value=draft.finalMaxTokens;$('#sTemp').value=draft.temperature;
-  $('#sEffort').value=draft.effort;$('#sFinalEffort').value=draft.finalEffort;$('#sAuto').checked=draft.autoStop;draft.gh=Object.assign({token:'',repo:'',branch:''},draft.gh);$('#sGhRepo').value=draft.gh.repo;$('#sGhBranch').value=draft.gh.branch;$('#sGhToken').value=draft.gh.token;$('#sAudit').checked=draft.auditOn;$('#sAuditRounds').value=draft.auditRounds;
+  $('#sEffort').value=draft.effort;$('#sFinalEffort').value=draft.finalEffort;$('#sAuto').checked=draft.autoStop;$('#sAutoFinish').checked=draft.autoFinish!==false;draft.gh=Object.assign({token:'',repo:'',branch:''},draft.gh);$('#sGhRepo').value=draft.gh.repo;$('#sGhBranch').value=draft.gh.branch;$('#sGhToken').value=draft.gh.token;$('#sAudit').checked=draft.auditOn;$('#sAuditRounds').value=draft.auditRounds;
   renderMemberCards();$('#settings').showModal();
 }
 function saveSettings(){
   draft.apiKey=$('#sKey').value.trim();draft.moderator.name=$('#sModName').value.trim()||'رئيس الجلسة';draft.moderator.model=$('#sModModel').value.trim();draft.moderator.codeModel=$('#sModCode').value.trim();draft.moderator.role=$('#sModRole').value.trim();
   draft.rounds=Math.max(1,Math.min(8,+$('#sRounds').value||3));draft.maxTokens=+$('#sMax').value||3000;draft.finalMaxTokens=+$('#sFinalMax').value||16000;
   draft.temperature=Math.max(0,Math.min(2,parseFloat($('#sTemp').value)));if(isNaN(draft.temperature))draft.temperature=0.7;
-  draft.effort=$('#sEffort').value;draft.finalEffort=$('#sFinalEffort').value;draft.autoStop=$('#sAuto').checked;draft.gh={repo:$('#sGhRepo').value.trim(),branch:$('#sGhBranch').value.trim(),token:$('#sGhToken').value.trim()};draft.auditOn=$('#sAudit').checked;draft.auditRounds=Math.max(1,Math.min(3,+$('#sAuditRounds').value||1));
+  draft.effort=$('#sEffort').value;draft.finalEffort=$('#sFinalEffort').value;draft.autoStop=$('#sAuto').checked;draft.autoFinish=$('#sAutoFinish').checked;draft.gh={repo:$('#sGhRepo').value.trim(),branch:$('#sGhBranch').value.trim(),token:$('#sGhToken').value.trim()};draft.auditOn=$('#sAudit').checked;draft.auditRounds=Math.max(1,Math.min(3,+$('#sAuditRounds').value||1));
   draft.members=draft.members.filter(m=>m.name&&m.model);
   cfg=draft;saveCfg();renderTable();$('#settings').close();toast('تم الحفظ');
 }
@@ -1897,7 +1930,7 @@ function renderHelp(){
   $('#helpBody').querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{helpTab=b.dataset.h;renderHelp();});
 }
 $('#helpBtn').onclick=()=>{renderHelp();$('#helpDlg').showModal();};
-$('#resumeBtn').onclick=resumeFinal;
+$('#resumeBtn').onclick=()=>{autoTries=0;resumeFinal();};
 $('#attachBtn').onclick=()=>{$('#attachInput').value='';$('#attachInput').click();};
 $('#attachInput').onchange=e=>{const f=[...(e.target.files||[])];if(f.length)addFiles(f);};
 (function(){const comp=$('.composer');
